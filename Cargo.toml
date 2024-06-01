@@ -1,6 +1,6 @@
 [package]
 name = "natural-tts"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 license = "MIT OR Apache-2.0"
 authors = ["Creative Coders <officialccoders@gmail.com>"]
@@ -22,7 +22,7 @@ default = ["tts-rs", "coqui", "parler", "gtts"]
 derive_builder = "0.20.0"
 hound = "3.5.1"
 online = "4.0.2"
-pyo3 = "0.21.2"
+pyo3 = {version="0.21.2", features=["auto-initialize"]}
 rodio = "0.18.1"
 thiserror = "1.0.61"
 tts = "0.26.1"

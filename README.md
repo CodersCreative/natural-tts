@@ -2,12 +2,11 @@
 
 #### Natural TTS (natural-tts) is a rust crate for easily implementing Text-To-Speech into your rust programs.
 
-### Available TTS Engine / AIs:
+### Available TTS Engines / AIs:
 [Coqui TTS](https://github.com/coqui-ai/TTS)\
 [Parler TTS](https://github.com/huggingface/parler-tts)\
 [Google Gtts](https://github.com/pndurette/gTTS)\
 [TTS-RS](https://github.com/ndarilek/tts-rs)
-
 
 ### Install Rust
 
@@ -15,7 +14,28 @@
 
 On Linux or MacOS:
 ```
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+curl --proto '=https' --tlsv1.2 -ssf https://sh.rustup.rs | sh
+```
+
+### Example of saying something using Parler
+
+```Rust
+use std::error::Error;
+use natural_tts::{*, models::{parler::ParlerModel, coqui::CoquiModel}};
+
+fn main() -> Result<(), Box<dyn Error>>{
+
+    // Create the NaturalTts struct using the builder pattern.
+    let mut natural = NaturalTtsBuilder::default()
+        .parler_model(Some(ParlerModel::new()?))
+        .default_model(Model::Parler)
+        .build()?;
+
+    // Use the pre-included function to say a message using the default_model.
+    let _ = natural.say_auto("Hello, World!".to_string());
+    Ok(())
+}
+
 ```
 
 ## Contributing
