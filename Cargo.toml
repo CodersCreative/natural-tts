@@ -8,7 +8,7 @@ description = "High-level bindings to a variety of text-to-speech libraries."
 homepage = "https://github.com/CodersCreative/natural-tts/tree/master"
 readme = "README.md"
 publish = true
-keywords = ["text-to-speech", "TTS", "coqui-ai", "gtts", "parler", "tts", "speech", "dispatcher"]
+keywords = ["text-to-speech", "coqui-ai", "gtts", "parler", "tts"]
 categories = ["science", "api-bindings"]
 
 [features]
