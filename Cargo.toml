@@ -19,10 +19,10 @@ gtts = []
 default = ["tts-rs", "coqui", "parler", "gtts"]
 
 [dependencies]
-derive_builder = "0.20.0"
-hound = "3.5.1"
-online = "4.0.2"
+derive_builder = { version = "0.20.0"}
+hound = { version = "3.5.1"}
+online = { version = "4.0.2"}
 pyo3 = {version="0.21.2", features=["auto-initialize"]}
-rodio = "0.18.1"
-thiserror = "1.0.61"
-tts = "0.26.1"
+rodio = { version = "0.18.1"}
+thiserror = { version = "1.0.61"}
+tts = { version = "0.26.1"}
