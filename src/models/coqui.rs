@@ -1,7 +1,7 @@
 use super::*;
 use pyo3::{prelude::*, types::PyModule};
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct CoquiModel {
     module: Py<PyModule>,
     model: Py<pyo3::PyAny>,

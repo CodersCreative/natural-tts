@@ -1,5 +1,6 @@
 pub mod models;
 mod utils;
+mod test;
 
 use std::error::Error;
 
@@ -10,20 +11,24 @@ use crate::models::{coqui, parler, gtts};
 use thiserror::Error;
 use derive_builder::Builder;
 
-#[derive(Default, Builder)]
+#[derive(Builder, Clone, Default)]
 #[builder(setter(into))]
 pub struct NaturalTts{
     pub default_model : Option<Model>,
     #[cfg(feature = "tts-rs")]
+    #[builder(default = "None")]
     pub tts_model : Option<Tts>,
 
     #[cfg(feature = "parler")]
+    #[builder(default = "None")]
     pub parler_model : Option<parler::ParlerModel>,
 
     #[cfg(feature = "coqui")]
+    #[builder(default = "None")]
     pub coqui_model : Option<coqui::CoquiModel>,
 
     #[cfg(feature = "gtts")]
+    #[builder(default = "None")]
     pub gtts_model : Option<gtts::GttsModel>,
 }
 
@@ -99,7 +104,6 @@ pub enum TtsError {
     #[error("Default model not set")]
     NoDefaultModel,
 }
-
 
 
 

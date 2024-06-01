@@ -4,7 +4,7 @@ use std::error::Error;
 use pyo3::{prelude::*, types::PyModule};
 use super::*;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct ParlerModel {
     module: Py<PyModule>,
     model: Py<pyo3::PyAny>,

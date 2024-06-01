@@ -1,7 +1,7 @@
 use pyo3::{prelude::*, types::PyModule};
 use super::*;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct GttsModel {
     module: Py<PyModule>,
 }
