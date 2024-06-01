@@ -1,0 +1,29 @@
+[package]
+name = "natural-tts"
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+authors = ["Creative Coders <officialccoders@gmail.com>"]
+description = "High-level bindings to a variety of text-to-speech libraries."
+homepage = "https://github.com/CodersCreative/natural-tts/tree/main"
+homepage = "https://github.com/CodersCreative/natural-tts/tree/main"
+readme = "README.md"
+publish = true
+keywords = ["text-to-speech", "TTS", "coqui-ai", "gtts", "parler", "tts", "speech", "dispatcher"]
+categories = ["science", "api-bindings"]
+
+[features]
+tts-rs = []
+coqui = []
+parler = []
+gtts = []
+default = ["tts-rs", "coqui", "parler", "gtts"]
+
+[dependencies]
+derive_builder = "0.20.0"
+hound = "3.5.1"
+online = "4.0.2"
+pyo3 = "0.21.2"
+rodio = "0.18.1"
+thiserror = "1.0.61"
+tts = "0.26.1"
