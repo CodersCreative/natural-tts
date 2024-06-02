@@ -35,9 +35,15 @@ impl NaturalModelTrait for MSEdgeModel{
     type SynthesizeType = f32;
     fn say(&mut self, message : String) -> Result<(), Box<dyn std::error::Error>> {
         let synthesized = Self::synthesize(self, message)?;
+        
+        let rate = match self.config.rate{
+            x if x <= 0 => 16000,
+            x => x
+        };
+
         match synthesized.spec{
             Spec::Wav(x) => play_audio(synthesized.data, x.sample_rate),
-            Spec::Synthesized(_, x) => play_audio(synthesized.data, self.config.rate as u32)
+            Spec::Synthesized(_, x) => play_audio(synthesized.data, rate as u32)
         }
         Ok(())
     }

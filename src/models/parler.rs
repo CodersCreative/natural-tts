@@ -14,7 +14,7 @@ pub struct ParlerModel {
 }
 
 impl ParlerModel{
-    pub fn new(description : String, model : String, use_gpu : bool) -> Result<Self, Box<dyn Error>>{
+    pub fn new(description : String, pmodel : String, use_gpu : bool) -> Result<Self, Box<dyn Error>>{
         let m = Python::with_gil(|py|{
             let activators = PyModule::from_code_bound(py, r#"
 import torch
@@ -49,8 +49,8 @@ def say(model, tokenizer, device, description, message, path):
             ).unwrap();
 
             let device : String= activators.getattr("get_device").unwrap().call1((use_gpu,)).unwrap().extract().unwrap();
-            let model = activators.getattr("get_model").unwrap().call1((device.clone(), model.clone())).unwrap().unbind();
-            let tokenizer = activators.getattr("get_tokenizer").unwrap().call1((model.clone(),)).unwrap().unbind();
+            let model = activators.getattr("get_model").unwrap().call1((device.clone(), pmodel.clone())).unwrap().unbind();
+            let tokenizer = activators.getattr("get_tokenizer").unwrap().call1((pmodel.clone(),)).unwrap().unbind();
             return Self{
                 module: activators.unbind(),
                 description,

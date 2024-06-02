@@ -1,4 +1,5 @@
 use msedge::MSEdgeModel;
+use parler::ParlerModel;
 
 use crate::{*, models::{gtts::GttsModel}};
 
@@ -12,12 +13,20 @@ fn gtts_test(){
 }
 
 
+#[test]
+fn parler_test(){
+    let mut natural = NaturalTtsBuilder::default()
+        .parler_model(ParlerModel::default())
+        .default_model(Model::Parler)
+        .build().unwrap();
+    let _ = natural.say_auto("Hello, World!".to_string());
+}
 
 #[test]
 fn msedge_test(){
     let mut natural = NaturalTtsBuilder::default()
         .msedge_model(MSEdgeModel::default())
-        .default_model(Model::Gtts)
+        .default_model(Model::MSEdge)
         .build().unwrap();
     let _ = natural.say_auto("Hello, World!".to_string());
 }
