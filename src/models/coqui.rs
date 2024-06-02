@@ -1,5 +1,6 @@
 use super::*;
 use pyo3::{prelude::*, types::PyModule};
+use rodio::Sample;
 
 #[derive(Clone, Debug)]
 pub struct CoquiModel {
@@ -9,15 +10,15 @@ pub struct CoquiModel {
 }
 
 impl CoquiModel{
-    pub fn new(model_name : String) -> Result<Self, String>{
+    pub fn new(model_name : String, use_gpu : bool) -> Result<Self, Box<dyn Error>>{
+        return Err(Box::new(TtsError::NotSupported));
         let m = Python::with_gil(|py|{
             let activators = PyModule::from_code_bound(py, r#"
 import torch
 #import TTS
 
-def get_device():
-    device = "cuda:0" if torch.cuda.is_available() else "cpu"
-    #device = "cpu"
+def get_device(gpu):
+    device = "cuda:0" if torch.cuda.is_available() && gpu else "cpu"
     return device
 
 def get_model(name, device):
@@ -30,8 +31,9 @@ def say(model, device, message, path):
             "#, "parler.py", "Parler"
             ).unwrap();
 
-            let device : String= activators.getattr("get_device").unwrap().call0().unwrap().extract().unwrap();
+            let device : String= activators.getattr("get_device").unwrap().call1((use_gpu,)).unwrap().extract().unwrap();
             let model = activators.getattr("get_model").unwrap().call1((model_name, device.clone())).unwrap().unbind();
+
             return Self{
                 module: activators.unbind(),
                 model,
@@ -43,7 +45,15 @@ def say(model, device, message, path):
     }
 }
 
+impl Default for CoquiModel{
+    fn default() -> Self {
+        return Self::new("base".to_string(), true).unwrap();
+    }
+}
+
 impl NaturalModelTrait for CoquiModel{
+    type SynthesizeType = f32;
+
     fn save(&mut self, message: String, path : String) -> Result<(), Box<dyn Error>>{
         Python::with_gil(|py|{
             let args = (self.model.clone(),  self.device.clone().into_py(py), message, path.clone());
@@ -56,7 +66,7 @@ impl NaturalModelTrait for CoquiModel{
        speak_model(self, message) 
     }
 
-    fn synthesize(&mut self, message : String) -> Result<Vec<f32>, Box<dyn Error>> {
+    fn synthesize(&mut self, message : String) -> Result<SynthesizedAudio<Self::SynthesizeType>, Box<dyn Error>> {
         synthesize_model(self, message)
     }
 }

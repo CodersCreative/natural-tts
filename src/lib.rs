@@ -4,7 +4,7 @@ mod test;
 
 use std::error::Error;
 
-use models::NaturalModelTrait;
+use models::{msedge, tts_rs::TtsModel, NaturalModelTrait};
 use tts::Tts;
 use online::check;
 use crate::models::{coqui, parler, gtts};
@@ -17,7 +17,7 @@ pub struct NaturalTts{
     pub default_model : Option<Model>,
     #[cfg(feature = "tts-rs")]
     #[builder(default = "None")]
-    pub tts_model : Option<Tts>,
+    pub tts_model : Option<TtsModel>,
 
     #[cfg(feature = "parler")]
     #[builder(default = "None")]
@@ -30,25 +30,15 @@ pub struct NaturalTts{
     #[cfg(feature = "gtts")]
     #[builder(default = "None")]
     pub gtts_model : Option<gtts::GttsModel>,
+
+    #[cfg(feature = "msedge")]
+    #[builder(default = "None")]
+    pub msedge_model : Option<msedge::MSEdgeModel>,
 }
 
 impl NaturalTts{
     pub fn say_auto(&mut self, message : String) -> Result<(), Box<dyn Error>>{
         let is_online = check(Some(1)).is_ok();
-
-        #[cfg(feature = "gtts")]
-        let mut gtts_fn = || -> Result<(), Box<dyn Error>>{
-            match is_online{
-                true => match &mut self.gtts_model{
-                    Some(x) => x.say(message.clone()),
-                    None => Err(Box::new(TtsError::NotLoaded)),
-                },
-                _ => match &mut self.parler_model{
-                    Some(x) => x.say(message.clone()),
-                    None => Err(Box::new(TtsError::NotLoaded)),
-                },
-            }
-        };
 
         if let Some(model) = &self.default_model{
             return match model{
@@ -67,8 +57,16 @@ impl NaturalTts{
                     Some(x) => x.say(message),
                     None => Err(Box::new(TtsError::NotLoaded)),
                 },
+                #[cfg(feature = "msedge")]
+                Model::MSEdge => match &mut self.msedge_model{
+                    Some(x) => x.say(message),
+                    None => Err(Box::new(TtsError::NotLoaded)),
+                },
                 #[cfg(feature = "gtts")]
-                _ => gtts_fn(), 
+                _ => match &mut self.gtts_model{
+                    Some(x) => x.say(message),
+                    None => Err(Box::new(TtsError::NotLoaded)),
+                },
             };
         }
 
@@ -87,6 +85,9 @@ pub enum Model {
     #[cfg(feature = "tts-rs")]
     TTS,
 
+    #[cfg(feature = "msedge")]
+    MSEdge,
+    
     #[cfg(feature = "gtts")]
     #[default] Gtts
 }

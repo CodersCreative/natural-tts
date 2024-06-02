@@ -12,17 +12,20 @@ keywords = ["text-to-speech", "coqui-ai", "gtts", "parler", "tts"]
 categories = ["science", "api-bindings"]
 
 [features]
-tts-rs = []
-coqui = []
-parler = []
-gtts = []
-default = ["tts-rs", "coqui", "parler", "gtts"]
+tts-rs = ["dep:tts"]
+coqui = ["dep:pyo3"]
+parler = ["dep:pyo3"]
+gtts = ["dep:pyo3"]
+msedge = ["dep:msedge-tts"]
+py_tts = ["coqui", "parler", "gtts"]
+default = ["tts-rs", "coqui", "parler", "gtts", "msedge"]
 
 [dependencies]
 derive_builder = { version = "0.20.0"}
 hound = { version = "3.5.1"}
+msedge-tts = { version = "0.2.1", optional = true}
 online = { version = "4.0.2"}
-pyo3 = {version="0.21.2", features=["auto-initialize"]}
+pyo3 = {version="0.21.2", features=["auto-initialize"], optional = true}
 rodio = { version = "0.18.1"}
 thiserror = { version = "1.0.61"}
-tts = { version = "0.26.1"}
+tts = { version = "0.26.1", optional = true}

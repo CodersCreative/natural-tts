@@ -1,10 +1,23 @@
-use crate::{*, models::{parler::ParlerModel, coqui::CoquiModel}};
+use msedge::MSEdgeModel;
+
+use crate::{*, models::{gtts::GttsModel}};
 
 #[test]
-fn coqui_test(){
+fn gtts_test(){
     let mut natural = NaturalTtsBuilder::default()
-        .coqui_model(Some(CoquiModel::new("tts_models/en/ljspeech/vits".to_string()).unwrap()))
-        .default_model(Model::Coqui)
+        .gtts_model(GttsModel::default())
+        .default_model(Model::Gtts)
+        .build().unwrap();
+    let _ = natural.say_auto("Hello, World!".to_string());
+}
+
+
+
+#[test]
+fn msedge_test(){
+    let mut natural = NaturalTtsBuilder::default()
+        .msedge_model(MSEdgeModel::default())
+        .default_model(Model::Gtts)
         .build().unwrap();
     let _ = natural.say_auto("Hello, World!".to_string());
 }

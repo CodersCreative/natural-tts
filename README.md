@@ -6,7 +6,8 @@
 [Coqui TTS](https://github.com/coqui-ai/TTS)\
 [Parler TTS](https://github.com/huggingface/parler-tts)\
 [Google Gtts](https://github.com/pndurette/gTTS)\
-[TTS-RS](https://github.com/ndarilek/tts-rs)
+[TTS-RS](https://github.com/ndarilek/tts-rs)\
+[MSEdge TTS](https://github.com/hs-CN/msedge-tts)
 
 ### Install Rust
 
@@ -21,7 +22,7 @@ curl --proto '=https' --tlsv1.2 -ssf https://sh.rustup.rs | sh
 
 ```Rust
 use std::error::Error;
-use natural_tts::{*, models::{parler::ParlerModel, coqui::CoquiModel}};
+use natural_tts::{*, models::parler::ParlerModel};
 
 fn main() -> Result<(), Box<dyn Error>>{
 
