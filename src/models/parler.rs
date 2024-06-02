@@ -26,8 +26,10 @@ import soundfile as sf
 transformers.logging.set_verbosity_error()
 
 def get_device(gpu):
-    device = "cuda:0" if torch.cuda.is_available() && gpu else "cpu"
-    return device
+    if torch.cuda.is_available() && gpu:
+        return "cuda:0"
+    else:
+        return "cpu"
 
 def get_model(device, model):
     model = ParlerTTSForConditionalGeneration.from_pretrained(model).to(device)

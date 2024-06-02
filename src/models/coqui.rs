@@ -18,8 +18,10 @@ import torch
 #import TTS
 
 def get_device(gpu):
-    device = "cuda:0" if torch.cuda.is_available() && gpu else "cpu"
-    return device
+    if torch.cuda.is_available() && gpu:
+        return "cuda:0"
+    else:
+        return "cpu"
 
 def get_model(name, device):
     #return TTS(model_name=name, progress_bar=False).to(device)
