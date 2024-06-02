@@ -49,7 +49,7 @@ def say(model, device, message, path):
 
 impl Default for CoquiModel{
     fn default() -> Self {
-        return Self::new("base".to_string(), true).unwrap();
+        return Self::new("tts_models/en/ljspeech/vits".to_string(), true).unwrap();
     }
 }
 
