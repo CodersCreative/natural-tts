@@ -18,7 +18,7 @@ import torch
 #import TTS
 
 def get_device(gpu):
-    if torch.cuda.is_available() && gpu:
+    if torch.cuda.is_available() and gpu:
         return "cuda:0"
     else:
         return "cpu"

@@ -28,7 +28,7 @@ fn main() -> Result<(), Box<dyn Error>>{
 
     // Create the NaturalTts struct using the builder pattern.
     let mut natural = NaturalTtsBuilder::default()
-        .parler_model(Some(ParlerModel::new()?))
+        .parler_model(Some(ParlerModel::default()))
         .default_model(Model::Parler)
         .build()?;
 

@@ -26,7 +26,7 @@ import soundfile as sf
 transformers.logging.set_verbosity_error()
 
 def get_device(gpu):
-    if torch.cuda.is_available() && gpu:
+    if torch.cuda.is_available() and gpu:
         return "cuda:0"
     else:
         return "cpu"
