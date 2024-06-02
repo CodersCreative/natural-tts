@@ -1,6 +1,6 @@
 use msedge_tts::{tts::{client::connect, SpeechConfig as OtherConfig}, voice::{get_voices_list, Voice}};
 
-use crate::utils::play_audio;
+use crate::utils::{play_audio, save_wav};
 
 use super::{NaturalModelTrait, Spec, SynthesizedAudio};
 
@@ -50,7 +50,13 @@ impl NaturalModelTrait for MSEdgeModel{
 
     fn save(&mut self, message : String, path : String) -> Result<(), Box<dyn std::error::Error>> {
         let synthesized = Self::synthesize(self, message)?;
+        
+        let rate = match self.config.rate{
+            x if x <= 0 => 16000,
+            x => x
+        };
 
+        save_wav(&synthesized.data, path.as_str(), rate as u32);
         Ok(())
     }
 
@@ -98,17 +104,7 @@ impl From<&msedge_tts::tts::SpeechConfig> for SpeechConfig {
 
 impl From<&msedge_tts::voice::Voice> for SpeechConfig {
     fn from(voice: &msedge_tts::voice::Voice) -> Self {
-        let audio_output_format = if let Some(ref output_format) = voice.suggested_codec {
-            output_format.clone()
-        } else {
-            "audio-24khz-48kbitrate-mono-mp3".to_string()
-        };
-        Self {
-            voice_name: voice.name.clone(),
-            audio_format: audio_output_format,
-            pitch: 0,
-            rate: 0,
-            volume: 0,
-        }
+        let mscfg = OtherConfig::from(voice);
+        return Self::from(&mscfg);
     }
 }
