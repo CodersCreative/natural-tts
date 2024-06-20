@@ -1,3 +1,5 @@
+use meta::MetaModel;
+
 use crate::{*, models::{gtts::GttsModel, tts_rs::TtsModel, parler::ParlerModel, msedge::MSEdgeModel}};
 
 #[test]
@@ -41,6 +43,14 @@ fn tts_test(){
     let _ = natural.say_auto("Hello, World!".to_string());
 }
 
+#[test]
+fn meta_test(){
+    let mut natural = NaturalTtsBuilder::default()
+        .meta_model(MetaModel::default())
+        .default_model(Model::Meta)
+        .build().unwrap();
+    let _ = natural.say_auto("Hello, World!".to_string());
+}
 // #[test]
 // fn coqui_test(){
 //     let mut natural = NaturalTtsBuilder::default()

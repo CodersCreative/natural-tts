@@ -3,6 +3,7 @@ pub mod parler;
 pub mod gtts;
 pub mod tts_rs;
 pub mod msedge;
+pub mod meta;
 use hound::WavSpec;
 use rodio::Sample;
 

@@ -7,7 +7,7 @@ use std::error::Error;
 use models::{msedge, tts_rs::TtsModel, NaturalModelTrait};
 use tts::Tts;
 use online::check;
-use crate::models::{coqui, parler, gtts};
+use crate::models::{coqui, parler, gtts, meta};
 use thiserror::Error;
 use derive_builder::Builder;
 
@@ -34,6 +34,10 @@ pub struct NaturalTts{
     #[cfg(feature = "msedge")]
     #[builder(default = "None")]
     pub msedge_model : Option<msedge::MSEdgeModel>,
+
+    #[cfg(feature = "meta")]
+    #[builder(default = "None")]
+    pub meta_model : Option<meta::MetaModel>,
 }
 
 impl NaturalTts{
@@ -59,6 +63,11 @@ impl NaturalTts{
                 },
                 #[cfg(feature = "msedge")]
                 Model::MSEdge => match &mut self.msedge_model{
+                    Some(x) => x.say(message),
+                    None => Err(Box::new(TtsError::NotLoaded)),
+                },
+                #[cfg(feature = "meta")]
+                Model::Meta => match &mut self.msedge_model{
                     Some(x) => x.say(message),
                     None => Err(Box::new(TtsError::NotLoaded)),
                 },
@@ -88,11 +97,14 @@ pub enum Model {
     #[cfg(feature = "msedge")]
     MSEdge,
     
+    #[cfg(feature = "meta")]
+    Meta,
+    
     #[cfg(feature = "gtts")]
     #[default] Gtts
 }
 
-#[derive(Debug, Error)]
+#[derive(Debug, Error, Clone)]
 pub enum TtsError {
     #[error("Not Supported")]
     NotSupported,
@@ -104,6 +116,12 @@ pub enum TtsError {
     NotSaved,
     #[error("Default model not set")]
     NoDefaultModel,
+    #[error("Tensor Error")]
+    Tensor,
+    #[error("No Tokenizer Key")]
+    NoTokenizerKey,
+    #[error("Json Error")]
+    Json,
 }
 
 

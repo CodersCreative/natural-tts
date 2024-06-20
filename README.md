@@ -44,6 +44,26 @@ fn main() -> Result<(), Box<dyn Error>>{
 
 ```
 
+### Example of saying something using Meta Voice
+
+```Rust
+use std::error::Error;
+use natural_tts::{*, models::meta::MetaModel};
+
+fn main() -> Result<(), Box<dyn Error>>{
+    // Create the NaturalTts struct using the builder pattern.
+    let mut natural = NaturalTtsBuilder::default()
+        .gtts_model(MetaModel::default())
+        .default_model(Model::Meta)
+        .build()?;
+
+    // Use the pre-included function to say a message using the default_model.
+    let _ = natural.say_auto("Hello, World!".to_string())?;
+    Ok(())
+}
+
+```
+
 ### Example of saying something using Parler
 
 ```Rust
