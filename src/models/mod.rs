@@ -4,15 +4,12 @@ pub mod gtts;
 pub mod tts_rs;
 pub mod msedge;
 pub mod meta;
+
 use hound::WavSpec;
 use rodio::Sample;
-
 use msedge_tts::tts::AudioMetadata;
-use std::error::Error;
-use std::fs::File;
-use crate::TtsError;
-
-use crate::utils::{get_path, play_wav_file, read_wav_file};
+use std::{error::Error, fs::File};
+use crate::{utils::{get_path, play_wav_file, read_wav_file}, TtsError};
 
 pub trait NaturalModelTrait {
     type SynthesizeType : Sample + Send;
@@ -25,20 +22,20 @@ pub trait NaturalModelTrait {
 pub fn speak_model<T : NaturalModelTrait>(model : &mut T, message : String) -> Result<(), Box<dyn Error>>{
     let path = "text_to_speech/output.wav";
     let actual = get_path(path.to_string());
-    std::fs::remove_file(actual.clone());
-    model.save(message.clone(), actual.clone());
-    play_wav_file(&actual);
-    std::fs::remove_file(actual);
+    let _ = std::fs::remove_file(actual.clone());
+    let _ = model.save(message.clone(), actual.clone());
+    let _ = play_wav_file(&actual);
+    let _ = std::fs::remove_file(actual);
     Ok(())
 }
 
 pub fn synthesize_model<T : NaturalModelTrait>(model : &mut T, message : String) -> Result<SynthesizedAudio<f32>, Box<dyn Error>>{
     let path = "text_to_speech/output.wav";
     let actual = get_path(path.to_string());
-    std::fs::remove_file(actual.clone());
-    model.save(message.clone(), actual.clone());
+    let _ = std::fs::remove_file(actual.clone());
+    let _ = model.save(message.clone(), actual.clone());
     let rwf = read_wav_file(&actual)?;
-    std::fs::remove_file(actual);
+    let _ = std::fs::remove_file(actual);
     Ok(rwf)
 }
 

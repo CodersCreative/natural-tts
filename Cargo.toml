@@ -1,8 +1,8 @@
 [package]
 name = "natural-tts"
-version = "0.1.4"
+version = "0.1.5"
 edition = "2021"
-license = "MIT OR Apache-2.0"
+license = "MIT"
 authors = ["Creative Coders <officialccoders@gmail.com>"]
 description = "High-level bindings to a variety of text-to-speech libraries."
 repository = "https://github.com/CodersCreative/natural-tts"
@@ -18,9 +18,10 @@ coqui = ["dep:pyo3"]
 parler = ["dep:pyo3"]
 gtts = ["dep:pyo3"]
 msedge = ["dep:msedge-tts"]
-py_tts = ["coqui", "parler", "gtts"]
+py_tts = ["parler", "gtts"]
 non_py_tts = ["meta", "msedge", "tts-rs"]
-default = ["tts-rs", "coqui", "parler", "gtts", "msedge", "meta"]
+default = ["py_tts", "non_py_tts"]
+test = ["default", "coqui"]
 
 [dependencies]
 candle-core = {version = "0.5.1", optional = true}
@@ -28,14 +29,13 @@ candle-nn = {version = "0.5.1", optional = true}
 candle-transformers = {version = "0.5.1", optional = true}
 derive_builder = { version = "0.20.0"}
 hf-hub = {version = "0.3.2", optional = true}
-hound = { version = "3.5.1"}
-msedge-tts = { version = "0.2.1", optional = true}
-online = { version = "4.0.2"}
+hound = {version = "3.5.1"}
+msedge-tts = {version = "0.2.1", optional = true}
 pyo3 = {version="0.21.2", features=["auto-initialize"], optional = true}
 rand = {version = "0.8.5", optional = true}
-rodio = { version = "0.18.1"}
+rodio = {version = "0.18.1"}
 serde_json = {version = "1.0.117", optional = true}
-thiserror = { version = "1.0.61"}
+thiserror = {version = "1.0.61"}
 tracing-chrome = {version = "0.7.2", optional = true}
 tracing-subscriber = {version = "0.3.18", optional = true}
-tts = { version = "0.26.1", optional = true}
+tts = {version = "0.26.1", optional = true}

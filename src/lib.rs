@@ -2,13 +2,9 @@ pub mod models;
 mod utils;
 mod test;
 
+use thiserror::Error as TError;
 use std::error::Error;
-
-use models::{msedge, tts_rs::TtsModel, NaturalModelTrait};
-use tts::Tts;
-use online::check;
-use crate::models::{coqui, parler, gtts, meta};
-use thiserror::Error;
+use crate::models::{msedge, tts_rs::TtsModel, NaturalModelTrait, coqui, parler, gtts, meta};
 use derive_builder::Builder;
 
 #[derive(Builder, Clone, Default)]
@@ -40,10 +36,10 @@ pub struct NaturalTts{
     pub meta_model : Option<meta::MetaModel>,
 }
 
-impl NaturalTts{
-    pub fn say_auto(&mut self, message : String) -> Result<(), Box<dyn Error>>{
-        let is_online = check(Some(1)).is_ok();
-
+impl NaturalModelTrait for NaturalTts{
+    type SynthesizeType = f32;
+    
+    fn say(&mut self, message : String) -> Result<(), Box<dyn Error>> {
         if let Some(model) = &self.default_model{
             return match model{
                 #[cfg(feature = "coqui")]
@@ -67,7 +63,7 @@ impl NaturalTts{
                     None => Err(Box::new(TtsError::NotLoaded)),
                 },
                 #[cfg(feature = "meta")]
-                Model::Meta => match &mut self.msedge_model{
+                Model::Meta => match &mut self.meta_model{
                     Some(x) => x.say(message),
                     None => Err(Box::new(TtsError::NotLoaded)),
                 },
@@ -80,6 +76,98 @@ impl NaturalTts{
         }
 
         Err(Box::new(TtsError::NoDefaultModel))
+    }
+
+    fn synthesize(&mut self, message : String) -> Result<models::SynthesizedAudio<Self::SynthesizeType>, Box<dyn Error>> {
+        if let Some(model) = &self.default_model{
+            return match model{
+                #[cfg(feature = "coqui")]
+                Model::Coqui => match &mut self.coqui_model{
+                    Some(x) => x.synthesize(message),
+                    None => Err(Box::new(TtsError::NotLoaded)),
+                },
+                #[cfg(feature = "parler")]
+                Model::Parler => match &mut self.parler_model{
+                    Some(x) => x.synthesize(message),
+                    None => Err(Box::new(TtsError::NotLoaded)),
+                },
+                #[cfg(feature = "tts-rs")]
+                Model::TTS => match &mut self.tts_model{
+                    Some(x) => x.synthesize(message),
+                    None => Err(Box::new(TtsError::NotLoaded)),
+                },
+                #[cfg(feature = "msedge")]
+                Model::MSEdge => match &mut self.msedge_model{
+                    Some(x) => x.synthesize(message),
+                    None => Err(Box::new(TtsError::NotLoaded)),
+                },
+                #[cfg(feature = "meta")]
+                Model::Meta => match &mut self.meta_model{
+                    Some(x) => x.synthesize(message),
+                    None => Err(Box::new(TtsError::NotLoaded)),
+                },
+                #[cfg(feature = "gtts")]
+                _ => match &mut self.gtts_model{
+                    Some(x) => x.synthesize(message),
+                    None => Err(Box::new(TtsError::NotLoaded)),
+                },
+            };
+        }
+
+        Err(Box::new(TtsError::NoDefaultModel))
+    }
+
+    fn save(&mut self, message : String, path : String) -> Result<(), Box<dyn Error>> {
+        if let Some(model) = &self.default_model{
+            return match model{
+                #[cfg(feature = "coqui")]
+                Model::Coqui => match &mut self.coqui_model{
+                    Some(x) => x.save(message, path),
+                    None => Err(Box::new(TtsError::NotLoaded)),
+                },
+                #[cfg(feature = "parler")]
+                Model::Parler => match &mut self.parler_model{
+                    Some(x) => x.save(message, path),
+                    None => Err(Box::new(TtsError::NotLoaded)),
+                },
+                #[cfg(feature = "tts-rs")]
+                Model::TTS => match &mut self.tts_model{
+                    Some(x) => x.save(message, path),
+                    None => Err(Box::new(TtsError::NotLoaded)),
+                },
+                #[cfg(feature = "msedge")]
+                Model::MSEdge => match &mut self.msedge_model{
+                    Some(x) => x.save(message, path),
+                    None => Err(Box::new(TtsError::NotLoaded)),
+                },
+                #[cfg(feature = "meta")]
+                Model::Meta => match &mut self.meta_model{
+                    Some(x) => x.save(message, path),
+                    None => Err(Box::new(TtsError::NotLoaded)),
+                },
+                #[cfg(feature = "gtts")]
+                _ => match &mut self.gtts_model{
+                    Some(x) => x.save(message, path),
+                    None => Err(Box::new(TtsError::NotLoaded)),
+                },
+            };
+        }
+
+        Err(Box::new(TtsError::NoDefaultModel))
+    }
+}
+
+impl NaturalTts{ 
+    pub fn say_auto(&mut self, message : String) -> Result<(), Box<dyn Error>>{
+        self.say(message)
+    }
+    
+    pub fn save_auto(&mut self, message : String, path : String) -> Result<(), Box<dyn Error>>{
+        self.save(message, path)
+    }
+    
+    pub fn synthesize_auto(&mut self, message : String) -> Result<models::SynthesizedAudio<f32>, Box<dyn Error>>{
+        self.synthesize(message)
     }
 }
 
@@ -104,7 +192,7 @@ pub enum Model {
     #[default] Gtts
 }
 
-#[derive(Debug, Error, Clone)]
+#[derive(Debug, TError, Clone)]
 pub enum TtsError {
     #[error("Not Supported")]
     NotSupported,
@@ -123,8 +211,3 @@ pub enum TtsError {
     #[error("Json Error")]
     Json,
 }
-
-
-
-
-

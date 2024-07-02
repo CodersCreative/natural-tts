@@ -1,9 +1,6 @@
 use std::error::Error;
-
 use tts::Tts;
-
 use crate::TtsError;
-
 use super::{NaturalModelTrait, SynthesizedAudio};
 
 #[derive(Clone)]

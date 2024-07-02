@@ -1,6 +1,5 @@
 use super::*;
 use pyo3::{prelude::*, types::PyModule};
-use rodio::Sample;
 
 #[derive(Clone, Debug)]
 pub struct CoquiModel {
@@ -11,11 +10,10 @@ pub struct CoquiModel {
 
 impl CoquiModel{
     pub fn new(model_name : String, use_gpu : bool) -> Result<Self, Box<dyn Error>>{
-        return Err(Box::new(TtsError::NotSupported));
         let m = Python::with_gil(|py|{
             let activators = PyModule::from_code_bound(py, r#"
 import torch
-#import TTS
+import TTS
 
 def get_device(gpu):
     if torch.cuda.is_available() and gpu:
@@ -24,13 +22,11 @@ def get_device(gpu):
         return "cpu"
 
 def get_model(name, device):
-    #return TTS(model_name=name, progress_bar=False).to(device)
-    return ""
+    return TTS(model_name=name, progress_bar=False).to(device)
 
 def say(model, device, message, path):
-    #model.tts_to_file(text=message, file_path=path)
-    pass
-            "#, "parler.py", "Parler"
+    model.tts_to_file(text=message, file_path=path)
+            "#, "coqui.py", "Coqui"
             ).unwrap();
 
             let device : String= activators.getattr("get_device").unwrap().call1((use_gpu,)).unwrap().extract().unwrap();

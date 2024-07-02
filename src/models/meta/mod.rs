@@ -1,24 +1,15 @@
 pub mod bs1770;
 pub mod utils;
 
-use std::error::Error;
-use std::io::Write;
-use std::path::PathBuf;
-use candle_transformers::generation::LogitsProcessor;
-use candle_transformers::models::encodec;
-use candle_transformers::models::metavoice::{adapters, gpt, transformer};
-use candle_transformers::models::quantized_metavoice::transformer as qtransformer;
+use std::{path::PathBuf,io::Write,error::Error};
+use candle_transformers::{models::{encodec, quantized_metavoice::transformer as qtransformer, metavoice::{adapters, gpt, transformer}}, generation::LogitsProcessor};
 use derive_builder::Builder;
 use candle_core::{DType, IndexOp, Tensor, Device};
 use candle_nn::VarBuilder;
 use hf_hub::api::sync::Api;
 use rand::{distributions::Distribution, SeedableRng};
-
 use utils::*;
-
-use crate::utils::{get_path, play_wav_file, read_wav_file};
-use crate::TtsError;
-
+use crate::{utils::{get_path, play_wav_file, read_wav_file}, TtsError};
 use super::{did_save, NaturalModelTrait, SynthesizedAudio};
 
 #[derive(Builder, Clone, Default)]

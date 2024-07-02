@@ -1,11 +1,7 @@
-use hound::{WavReader, WavSpec};
-use rodio::cpal::FromSample;
-use std::error::Error;
-use rodio::{Decoder, Sink, OutputStream};
-use crate::models::SynthesizedAudio;
-use crate::models::Spec::Wav;
-use rodio::buffer::SamplesBuffer;
-use std::io::Write;
+use hound::WavReader;
+use std::{error::Error, io::Write};
+use rodio::{cpal::FromSample, buffer::SamplesBuffer, Decoder, Sink, OutputStream};
+use crate::models::{Spec::Wav, SynthesizedAudio};
 
 pub fn read_wav_file(path: &str) -> Result<SynthesizedAudio<f32>, Box<dyn Error>> {
     let mut reader = WavReader::open(path)?;
@@ -51,7 +47,6 @@ pub fn play_wav_file(path: &str) -> Result<(), Box<dyn Error>>{
     
     Ok(())
 }
-
 
 pub fn save_wav(data: &[f32], filename: &str, sample_rate: u32) -> Result<(), std::io::Error> {
     let mut file = std::fs::File::create(filename)?;

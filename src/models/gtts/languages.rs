@@ -73,8 +73,6 @@ pub enum Languages {
   Malayalam,
   /// ISO code: mr
   Marathi,
-  /// Myanmar (Burmese)
-  ///
   /// ISO code: my
   MyanmarAKABurmese,
   /// ISO code: ne

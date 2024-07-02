@@ -1,6 +1,5 @@
 use candle_core::utils::{cuda_is_available, metal_is_available};
 use crate::TtsError;
-
 use super::bs1770;
 use std::error::Error;
 use std::io::Write;

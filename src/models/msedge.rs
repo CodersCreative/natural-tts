@@ -1,7 +1,5 @@
 use msedge_tts::{tts::{client::connect, SpeechConfig as OtherConfig}, voice::{get_voices_list, Voice}};
-
 use crate::utils::{play_audio, save_wav};
-
 use super::{NaturalModelTrait, Spec, SynthesizedAudio};
 
 #[derive(Clone, Debug)]
@@ -43,7 +41,7 @@ impl NaturalModelTrait for MSEdgeModel{
 
         match synthesized.spec{
             Spec::Wav(x) => play_audio(synthesized.data, x.sample_rate),
-            Spec::Synthesized(_, x) => play_audio(synthesized.data, rate as u32)
+            Spec::Synthesized(_, _) => play_audio(synthesized.data, rate as u32)
         }
         Ok(())
     }
@@ -56,7 +54,7 @@ impl NaturalModelTrait for MSEdgeModel{
             x => x
         };
 
-        save_wav(&synthesized.data, path.as_str(), rate as u32);
+        let _ = save_wav(&synthesized.data, path.as_str(), rate as u32);
         Ok(())
     }
 

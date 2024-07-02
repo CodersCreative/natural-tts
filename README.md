@@ -7,16 +7,8 @@
 [Parler TTS](https://github.com/huggingface/parler-tts)\
 [Google Gtts](https://github.com/pndurette/gTTS)\
 [TTS-RS](https://github.com/ndarilek/tts-rs)\
-[MSEdge TTS](https://github.com/hs-CN/msedge-tts)
-
-### Install Rust
-
-[Install Rust](https://www.rust-lang.org/tools/install)
-
-On Linux or MacOS:
-```
-curl --proto '=https' --tlsv1.2 -ssf https://sh.rustup.rs | sh
-```
+[MSEdge TTS](https://github.com/hs-CN/msedge-tts)\
+[MetaVoice TTS](https://github.com/metavoiceio/metavoice-src)
 
 ### Example of saying something using Gtts but initializing every model.
 
@@ -29,7 +21,7 @@ fn main() -> Result<(), Box<dyn Error>>{
     let desc = "A female speaker in fast calming voice in a quiet environment".to_string();
     let model = "parler-tts/parler-tts-mini-expresso".to_string();
     let parler = ParlerModel::new(desc, model, false);
-    
+
     // Create the NaturalTts using the Builder pattern
     let mut natural = NaturalTtsBuilder::default()
         .default_model(Model::Gtts)
@@ -37,7 +29,7 @@ fn main() -> Result<(), Box<dyn Error>>{
         .parler_model(parler.unwrap())
         .tts_model(TtsModel::default())
         .build()?;
-        
+
     // Use the pre-included function to say a message using the default_model.
     let _ = natural.say_auto("Hello, World!".to_string())?;
 }
@@ -53,7 +45,7 @@ use natural_tts::{*, models::meta::MetaModel};
 fn main() -> Result<(), Box<dyn Error>>{
     // Create the NaturalTts struct using the builder pattern.
     let mut natural = NaturalTtsBuilder::default()
-        .gtts_model(MetaModel::default())
+        .meta_model(MetaModel::default())
         .default_model(Model::Meta)
         .build()?;
 
@@ -75,13 +67,13 @@ fn main() -> Result<(), Box<dyn Error>>{
     let desc = "A female speaker in fast calming voice in a quiet environment".to_string();
     let model = "parler-tts/parler-tts-mini-expresso".to_string();
     let parler = ParlerModel::new(desc, model, false);
-    
+
     // Create the NaturalTts using the Builder pattern
     let mut natural = NaturalTtsBuilder::default()
         .parler_model(parler.unwrap())
         .default_model(Model::Parler)
         .build()?;
-        
+
     // Use the pre-included function to say a message using the default_model.
     let _ = natural.say_auto("Hello, World!".to_string())?;
 }
@@ -151,7 +143,7 @@ fn main() -> Result<(), Box<dyn Error>>{
 ```
 
 ### Example of saying something using Coqui Tts
-#### Disclaimer : Currently not supported.
+#### Disclaimer : Currently only in test feature.
 
 ```Rust
 use std::error::Error;

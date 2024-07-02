@@ -1,6 +1,8 @@
+pub mod languages;
+
 use pyo3::{prelude::*, types::PyModule};
 use super::*;
-pub mod languages;
+
 #[derive(Clone, Debug)]
 pub struct GttsModel {
     language : languages::Languages,
@@ -15,7 +17,7 @@ from gtts import gTTS
 def say(message, path, lang):
     tts = gTTS(message, lang)
     tts.save(path)
-            "#, "parler.py", "Parler"
+            "#, "gtts.py", "Gtts"
             ).unwrap();
 
             let language = match language{
