@@ -13,7 +13,7 @@ impl CoquiModel{
         let m = Python::with_gil(|py|{
             let activators = PyModule::from_code_bound(py, r#"
 import torch
-import TTS
+from TTS.api import TTS
 
 def get_device(gpu):
     if torch.cuda.is_available() and gpu:
