@@ -1,4 +1,6 @@
-# Natural TTS
+# Natural TTS [![Rust](https://img.shields.io/badge/Rust-%23000000.svg?e&logo=rust&logoColor=white)]()
+
+![Linux](https://img.shields.io/badge/Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black) ![Windows](https://img.shields.io/badge/Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white)  ![macOS](https://img.shields.io/badge/mac%20os-000000?style=for-the-badge&logo=macos&logoColor=F0F0F0)
 
 #### Natural TTS (natural-tts) is a rust crate for easily implementing Text-To-Speech into your rust programs.
 
@@ -9,6 +11,16 @@
 [TTS-RS](https://github.com/ndarilek/tts-rs)\
 [MSEdge TTS](https://github.com/hs-CN/msedge-tts)\
 [MetaVoice TTS](https://github.com/metavoiceio/metavoice-src)
+
+### The project requires the following python dependencies for set apis:
+1. ```pip install numpy```
+2. ```pip install torch```
+
+if your using `Parler TTS`:
+1. ```pip install parler-tts```
+
+if your using `Google TTS`:
+1. ```pip install gtts```
 
 ### Example of saying something using Gtts but initializing every model.
 
@@ -168,7 +180,3 @@ fn main() -> Result<(), Box<dyn Error>>{
 
 Pull requests are welcome. For major changes, please open an issue first
 to discuss what you would like to change.
-
-## License
-
-[MIT](https://choosealicense.com/licenses/mit/)
