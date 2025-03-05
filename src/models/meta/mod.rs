@@ -20,13 +20,16 @@
 pub mod bs1770;
 pub mod utils;
 
+use rand::distr::weighted::WeightedIndex;
 use std::{path::PathBuf,io::Write,error::Error};
 use candle_transformers::{models::{encodec, quantized_metavoice::transformer as qtransformer, metavoice::{adapters, gpt, transformer}}, generation::LogitsProcessor};
 use derive_builder::Builder;
 use candle_core::{DType, IndexOp, Tensor, Device};
 use candle_nn::VarBuilder;
 use hf_hub::api::sync::Api;
-use rand::{distributions::Distribution, SeedableRng};
+use rand::distr::Distribution;
+use rand::rngs::StdRng;
+use rand::SeedableRng;
 use utils::*;
 use crate::{utils::{get_path, play_wav_file, read_wav_file}, TtsError};
 use super::{did_save, NaturalModelTrait, SynthesizedAudio};
@@ -243,7 +246,7 @@ impl MetaModel{
         }
         let fie2c = adapters::FlattenedInterleavedEncodec2Codebook::new(self.encodec_ntokens);
         let (_, ids1, ids2) = fie2c.decode(&tokens);
-        let mut rng = rand::rngs::StdRng::seed_from_u64(self.seed + 1337);
+        let mut rng = StdRng::seed_from_u64(self.seed + 1337);
         let encoded_text: Vec<_> = prompt_tokens.iter().map(|v| v - 1024).collect();
         let mut hierarchies_in1 =
             [encoded_text.as_slice(), ids1.as_slice(), &[self.encodec_ntokens]].concat();
@@ -268,7 +271,7 @@ impl MetaModel{
                 let logits = logits.i(step)?.to_dtype(DType::F32)?;
                 let logits = &(&logits / 1.0)?;
                 let prs = candle_nn::ops::softmax_last_dim(logits)?.to_vec1::<f32>()?;
-                let distr = rand::distributions::WeightedIndex::new(prs.as_slice())?;
+                let distr = WeightedIndex::new(prs.as_slice())?;
                 let sample = distr.sample(&mut rng) as u32;
                 codes_.push(sample)
             }
