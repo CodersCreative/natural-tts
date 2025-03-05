@@ -1,3 +1,5 @@
+use super::bs1770;
+use crate::TtsError;
 // Copyright (c) 2024-2025 natural-tts
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -18,14 +20,11 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 use candle_core::utils::{cuda_is_available, metal_is_available};
-use crate::TtsError;
-use super::bs1770;
+use candle_core::{Device, Tensor};
+use candle_transformers::models::metavoice::{tokenizers, transformer};
+use candle_transformers::models::quantized_metavoice::transformer as qtransformer;
 use std::error::Error;
 use std::io::Write;
-use candle_core::{DType, IndexOp, Tensor, Device};
-use candle_transformers::models::metavoice::{adapters, gpt, tokenizers, transformer};
-use candle_transformers::models::quantized_metavoice::transformer as qtransformer;
-
 
 
 #[derive(Clone, Debug)]
@@ -116,7 +115,7 @@ pub fn normalize_loudness(
     wav: &Tensor,
     sample_rate: u32,
     loudness_compressor: bool,
-) -> Result<candle_core::Tensor, Box<dyn Error>> {
+) -> Result<Tensor, Box<dyn Error>> {
     let energy = wav.sqr()?.mean_all()?.sqrt()?.to_vec0::<f32>()?;
     if energy < 2e-3 {
         return Ok(wav.clone());

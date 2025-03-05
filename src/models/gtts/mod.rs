@@ -39,10 +39,7 @@ def say(message, path, lang):
             "#, "gtts.py", "Gtts"
             ).unwrap();
 
-            let language = match language{
-                Some(x) => x,
-                None => languages::Languages::English,
-            };
+            let language = language.unwrap_or_else(|| languages::Languages::English);
 
             return Self{
                 language,
@@ -50,19 +47,19 @@ def say(message, path, lang):
             };
         });
 
-        return Ok(m);
+        Ok(m)
     }
 }
 
 impl Default for GttsModel{
     fn default() -> Self {
-        return Self::new(None).unwrap();
+        Self::new(None).unwrap()
     }
 }
 
 impl NaturalModelTrait for GttsModel{
     type SynthesizeType = f32;
-    fn save(&mut self, message: String, path : String) -> Result<(), Box<dyn Error>> {
+    fn save(&self, message: String, path : String) -> Result<(), Box<dyn Error>> {
         Python::with_gil(|py|{
             let _ =self.module.getattr(py, "say").unwrap().call1(py, (message, path.clone(), self.language.as_code(),));
         });
@@ -73,7 +70,7 @@ impl NaturalModelTrait for GttsModel{
        speak_model(self, message) 
     }
 
-    fn synthesize(&mut self, message : String) -> Result<SynthesizedAudio<Self::SynthesizeType>, Box<dyn Error>> {
+    fn synthesize(&self, message : String) -> Result<SynthesizedAudio<Self::SynthesizeType>, Box<dyn Error>> {
         synthesize_model(self, message)
     }
 }

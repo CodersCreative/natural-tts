@@ -27,29 +27,36 @@ pub struct MSEdgeModel{
 }
 
 impl MSEdgeModel{
-    pub fn new_from_voice(voice : Voice) -> Self{
-        return Self{
-            config : SpeechConfig::from(&voice)
-        };
+    pub fn new_from_voice(voice : Voice) -> Self {
+        Self{ config : SpeechConfig::from(&voice) }
     }
 
-    pub fn new(config : SpeechConfig) -> Self{
-        return Self{
-            config
-        };
+    pub fn new(config : SpeechConfig) -> Self {
+        Self{ config }
     }
-
 }
 
 impl Default for MSEdgeModel{
     fn default() -> Self {
         let voice = get_voices_list().unwrap();
-        return Self::new(SpeechConfig::from(voice.first().unwrap()));
+        Self::new(SpeechConfig::from(voice.first().unwrap()))
     }
 }
 
 impl NaturalModelTrait for MSEdgeModel{
     type SynthesizeType = f32;
+    fn save(&self, message : String, path : String) -> Result<(), Box<dyn std::error::Error>> {
+        let synthesized = Self::synthesize(self, message)?;
+        
+        let rate = match self.config.rate{
+            x if x <= 0 => 16000,
+            x => x
+        };
+
+        let _ = save_wav(&synthesized.data, path.as_str(), rate as u32);
+        Ok(())
+    }
+
     fn say(&mut self, message : String) -> Result<(), Box<dyn std::error::Error>> {
         let synthesized = Self::synthesize(self, message)?;
         
@@ -65,22 +72,10 @@ impl NaturalModelTrait for MSEdgeModel{
         Ok(())
     }
 
-    fn save(&mut self, message : String, path : String) -> Result<(), Box<dyn std::error::Error>> {
-        let synthesized = Self::synthesize(self, message)?;
-        
-        let rate = match self.config.rate{
-            x if x <= 0 => 16000,
-            x => x
-        };
-
-        let _ = save_wav(&synthesized.data, path.as_str(), rate as u32);
-        Ok(())
-    }
-
-    fn synthesize(&mut self, message : String) -> Result<super::SynthesizedAudio<Self::SynthesizeType>, Box<dyn std::error::Error>> {
+    fn synthesize(&self, message : String) -> Result<SynthesizedAudio<Self::SynthesizeType>, Box<dyn std::error::Error>> {
         let mut tts = connect().unwrap();
         let audio = tts.synthesize(message.as_str(), &self.config.as_msedge())?;
-        return Ok(SynthesizedAudio::new(audio.audio_bytes.iter().map(|x| x.clone() as f32).collect(), Spec::Synthesized(audio.audio_format, audio.audio_metadata), None));
+        Ok(SynthesizedAudio::new(audio.audio_bytes.iter().map(|x| x.clone() as f32).collect(), Spec::Synthesized(audio.audio_format, audio.audio_metadata), None))
     }
 }
 
@@ -95,8 +90,7 @@ pub struct SpeechConfig {
 
 impl SpeechConfig{
     pub fn as_msedge(&self) -> OtherConfig{
-
-        return OtherConfig{
+        OtherConfig{
             voice_name : self.voice_name.clone(),
             audio_format: self.audio_format.clone(),
             pitch: self.pitch,
@@ -109,7 +103,7 @@ impl SpeechConfig{
 
 impl From<&msedge_tts::tts::SpeechConfig> for SpeechConfig {
     fn from(config: &msedge_tts::tts::SpeechConfig) -> Self {
-        return Self{
+        Self{
             voice_name : config.voice_name.clone(),
             audio_format: config.audio_format.clone(),
             pitch: config.pitch,
@@ -119,9 +113,9 @@ impl From<&msedge_tts::tts::SpeechConfig> for SpeechConfig {
     }
 }
 
-impl From<&msedge_tts::voice::Voice> for SpeechConfig {
-    fn from(voice: &msedge_tts::voice::Voice) -> Self {
+impl From<&Voice> for SpeechConfig {
+    fn from(voice: &Voice) -> Self {
         let mscfg = OtherConfig::from(voice);
-        return Self::from(&mscfg);
+        Self::from(&mscfg)
     }
 }

@@ -40,7 +40,7 @@ impl Default for TtsModel{
 
 impl NaturalModelTrait for TtsModel{
     type SynthesizeType = f32;
-    fn save(&mut self, message : String, path : String) -> Result<(), Box<dyn Error>> {
+    fn save(&self, _message : String, _path : String) -> Result<(), Box<dyn Error>> {
         Err(TtsError::NotSupported.into())
     }
 
@@ -57,7 +57,7 @@ impl NaturalModelTrait for TtsModel{
         Ok(())
     }
 
-    fn synthesize(&mut self, message : String) -> Result<SynthesizedAudio<Self::SynthesizeType>, Box<dyn Error>> {
+    fn synthesize(&self, _message : String) -> Result<SynthesizedAudio<Self::SynthesizeType>, Box<dyn Error>> {
         Err(TtsError::NotSupported.into())
     }
 }

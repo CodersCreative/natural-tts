@@ -100,10 +100,7 @@ impl MetaModel{
 
         let device = device(options.cpu)?;
         let api = Api::new()?;
-        let repo_path = match options.repo{
-            None => "lmz/candle-metavoice".to_string(),
-            Some(x) => x,
-        };
+        let repo_path = options.repo.unwrap_or_else(|| "lmz/candle-metavoice".to_string());
 
         let repo = api.model(repo_path.clone());
         
@@ -144,7 +141,7 @@ impl MetaModel{
         };
 
         let encodec_device = if device.is_metal() {
-            candle_core::Device::Cpu
+            Device::Cpu
         } else {
             device.clone()
         };
@@ -164,7 +161,7 @@ impl MetaModel{
                 .get("model.safetensors")?,
         };
         
-        return Ok(Self{
+        Ok(Self{
             first_stage_model,
             device,
             first_stage_meta,
@@ -181,7 +178,7 @@ impl MetaModel{
             max_tokens : options.max_tokens,
             spk_emb : options.spk_emb,
             encodec_ntokens : options.encodec_ntokens
-        });
+        })
     }
 
     pub fn get_secondary_models(&self) -> Result<(gpt::Model, encodec::Model), Box<dyn Error>>{
@@ -191,7 +188,7 @@ impl MetaModel{
         let encodec_vb = unsafe { VarBuilder::from_mmaped_safetensors(&[self.encodec_weights.clone()], self.dtype, &self.encodec_device)? };
         let encodec_model = encodec::Model::new(&self.encodec_config, encodec_vb)?;
 
-        return Ok((second_stage_model, encodec_model));
+        Ok((second_stage_model, encodec_model))
     }
 
     pub fn run (&self, prompt : String, filename : String,) -> Result<(), Box<dyn Error>>{
@@ -210,7 +207,7 @@ impl MetaModel{
             None => repo.get("spk_emb.safetensors")?,
         };
 
-        let spk_emb = candle_core::safetensors::load(&spk_emb_file, &candle_core::Device::Cpu)?;
+        let spk_emb = candle_core::safetensors::load(&spk_emb_file, &Device::Cpu)?;
         
         let spk_emb = match spk_emb.get("spk_emb") {
             None => return Err(TtsError::Tensor.into()),
@@ -296,14 +293,14 @@ impl MetaModel{
 
 impl Default for MetaModel{
     fn default() -> Self {
-        return Self::new(MetaModelOptions::default()).unwrap();
+        Self::new(MetaModelOptions::default()).unwrap()
     }
 }
 
 impl NaturalModelTrait for MetaModel{
     type SynthesizeType = f32;
 
-    fn save(&mut self, message: String, path : String) -> Result<(), Box<dyn Error>>{
+    fn save(&self, message: String, path : String) -> Result<(), Box<dyn Error>>{
         let _ = self.run(message, path.clone())?;
         did_save(path.as_str())
     }
@@ -316,7 +313,7 @@ impl NaturalModelTrait for MetaModel{
         Ok(())
     }
 
-    fn synthesize(&mut self, message : String) -> Result<SynthesizedAudio<Self::SynthesizeType>, Box<dyn Error>> {
+    fn synthesize(&self, message : String) -> Result<SynthesizedAudio<Self::SynthesizeType>, Box<dyn Error>> {
         let path = get_path("temp.wav".to_string());
         self.save(message, path.clone())?;
         let d = read_wav_file(&path)?;

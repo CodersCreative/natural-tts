@@ -25,8 +25,8 @@ use super::*;
 pub struct ParlerModel {
     pub description : String,
     module: Py<PyModule>,
-    model: Py<pyo3::PyAny>,
-    tokenizer: Py<pyo3::PyAny>,
+    model: Py<PyAny>,
+    tokenizer: Py<PyAny>,
     device: String,
 }
 
@@ -77,7 +77,7 @@ def say(model, tokenizer, device, description, message, path):
             };
         });
 
-        return Ok(m);
+        Ok(m)
     }
 }
 
@@ -85,13 +85,13 @@ impl Default for ParlerModel{
     fn default() -> Self {
         let desc = "A female speaker in fast calming voice in a quiet environment".to_string();
         let model = "parler-tts/parler-tts-mini-expresso".to_string();
-        return Self::new(desc.to_string(), model, true).unwrap();
+        Self::new(desc.to_string(), model, true).unwrap()
     }
 }
 
 impl NaturalModelTrait for ParlerModel{
     type SynthesizeType = f32;
-    fn save(&mut self, message: String, path : String)-> Result<(), Box<dyn Error>>{
+    fn save(&self, message: String, path : String)-> Result<(), Box<dyn Error>>{
         Python::with_gil(|py|{
             let args = (self.model.clone(), self.tokenizer.clone().into_py(py), self.device.clone().into_py(py), self.description.clone(), message, path.clone());
             let _ =self.module.getattr(py, "say").unwrap().call1(py, args);
@@ -103,7 +103,7 @@ impl NaturalModelTrait for ParlerModel{
        speak_model(self, message)
     }
 
-    fn synthesize(&mut self, message : String) -> Result<SynthesizedAudio<Self::SynthesizeType>, Box<dyn Error>> {
+    fn synthesize(&self, message : String) -> Result<SynthesizedAudio<Self::SynthesizeType>, Box<dyn Error>> {
         synthesize_model(self, message)
     }
 }

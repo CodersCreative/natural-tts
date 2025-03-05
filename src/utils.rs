@@ -22,6 +22,21 @@ use std::{error::Error, io::Write};
 use rodio::{cpal::FromSample, buffer::SamplesBuffer, Decoder, Sink, OutputStream};
 use crate::models::{Spec::Wav, SynthesizedAudio};
 
+/// Reads a .wav file and converts it into a SynthesizedAudio object.
+///
+/// # Arguments
+///
+/// * `path`: The path to the .wav file.
+///
+/// # Returns
+///
+/// * A SynthesizedAudio object containing the samples and metadata of the file.
+///
+/// # Errors
+///
+/// * If the file at `path` cannot be found or opened.
+/// * If the file at `path` is not a valid .wav file.
+/// * If there is an error reading the samples from the file.
 pub fn read_wav_file(path: &str) -> Result<SynthesizedAudio<f32>, Box<dyn Error>> {
     let mut reader = WavReader::open(path)?;
     let mut f32_samples: Vec<f32> = Vec::new();
@@ -36,12 +51,32 @@ pub fn read_wav_file(path: &str) -> Result<SynthesizedAudio<f32>, Box<dyn Error>
     Ok(SynthesizedAudio::new(f32_samples, Wav(reader.spec()), Some(reader.duration() as i32)))
 }
 
+/// Returns a path to a file within the `src/` directory.
+///
+/// # Arguments
+///
+/// * `path`: The path to the file, relative to the `src/` directory.
+///
+/// # Returns
+///
+/// * A string representing the absolute path to the file.
 pub fn get_path(path : String) -> String{
     let mut new_path = env!("CARGO_MANIFEST_DIR").to_string();
     new_path.push_str(&format!("/src/{}", path));
     return new_path;
 }
 
+/// Plays a raw audio buffer using the default audio device.
+///
+/// # Arguments
+///
+/// * `data`: The raw audio samples to play.
+/// * `rate`: The sample rate of the audio, in Hz.
+///
+/// # Errors
+///
+/// * If the default audio device cannot be opened.
+/// * If there is an error playing the audio.
 pub fn play_audio<T>(data: Vec<T>, rate : u32)
 where
     T : rodio::Sample + Send + 'static, f32 : FromSample<T>    
@@ -55,6 +90,17 @@ where
     sink.sleep_until_end();
 }
 
+/// Plays a WAV file using the default audio device.
+///
+/// # Arguments
+///
+/// * `path`: The path to the WAV file to play.
+///
+/// # Errors
+///
+/// * If the file at `path` cannot be opened.
+/// * If the WAV file is malformed.
+/// * If there is an error playing the audio.
 pub fn play_wav_file(path: &str) -> Result<(), Box<dyn Error>>{
     let file = std::fs::File::open(path)?;
     let decoder = Decoder::new(file)?;
@@ -67,6 +113,23 @@ pub fn play_wav_file(path: &str) -> Result<(), Box<dyn Error>>{
     Ok(())
 }
 
+/// Saves a slice of `f32` samples to a WAV file.
+///
+/// # Arguments
+///
+/// * `data`: The slice of `f32` samples to save.
+/// * `filename`: The path to the WAV file to save.
+/// * `sample_rate`: The sample rate of the audio, in Hz.
+///
+/// # Errors
+///
+/// * If there is an error creating or writing to the file at `filename`.
+///
+/// # Notes
+///
+/// * This function assumes that the `data` slice contains samples between -1.0 and 1.0.
+/// * This function will panic if `data` is empty.
+/// * This function does not support writing to non-WAV files, or writing non-PCM format WAV files.
 pub fn save_wav(data: &[f32], filename: &str, sample_rate: u32) -> Result<(), std::io::Error> {
     let mut file = std::fs::File::create(filename)?;
 
