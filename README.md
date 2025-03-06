@@ -4,41 +4,32 @@
 
 #### Natural TTS (natural-tts) is a rust crate for easily implementing Text-To-Speech into your rust programs.
 
+### To Do:
+* [ ] Add support for [Piper TTS](https://github.com/rhasspy/piper).
+* [ ] Remove all pyo3 usage.
+
 ### Available TTS Engines / AIs:
-[Coqui TTS](https://github.com/coqui-ai/TTS)\
 [Parler TTS](https://github.com/huggingface/parler-tts)\
 [Google Gtts](https://github.com/pndurette/gTTS)\
 [TTS-RS](https://github.com/ndarilek/tts-rs)\
 [MSEdge TTS](https://github.com/hs-CN/msedge-tts)\
 [MetaVoice TTS](https://github.com/metavoiceio/metavoice-src)
-
-### The project requires the following python dependencies for set apis:
-1. ```pip install numpy```
-2. ```pip install torch```
-
-if your using `Parler TTS`:
-1. ```pip install parler-tts```
-
-if your using `Google TTS`:
-1. ```pip install gtts```
+[Coqui TTS](https://github.com/coqui-ai/TTS)\
 
 ### Example of saying something using Gtts but initializing every model.
 
 ```Rust
 use std::error::Error;
-use crate::{*, models::{gtts::GttsModel, tts_rs::TtsModel, parler::ParlerModel, msedge::MSEdgeModel}};
+use crate::{*, models::{gtts::GttsModel, tts_rs::TtsModel, parler::ParlerModel, msedge::MSEdgeModel, meta::MetaModel}};
 
 fn main() -> Result<(), Box<dyn Error>>{
-    // Create the ParlerModel
-    let desc = "A female speaker in fast calming voice in a quiet environment".to_string();
-    let model = "parler-tts/parler-tts-mini-expresso".to_string();
-    let parler = ParlerModel::new(desc, model, false);
-
     // Create the NaturalTts using the Builder pattern
     let mut natural = NaturalTtsBuilder::default()
         .default_model(Model::Gtts)
         .gtts_model(GttsModel::default())
-        .parler_model(parler.unwrap())
+        .parler_model(ParlerModel::default())
+        .msedge_model(MSEdgeModel::default())
+        .meta_model(MetaModel::default())
         .tts_model(TtsModel::default())
         .build()?;
 
@@ -48,7 +39,7 @@ fn main() -> Result<(), Box<dyn Error>>{
 
 ```
 
-### Example of saying something using Meta Voice
+### Example of saying something using Meta Voice.
 
 ```Rust
 use std::error::Error;
@@ -68,21 +59,16 @@ fn main() -> Result<(), Box<dyn Error>>{
 
 ```
 
-### Example of saying something using Parler
+### Example of saying something using Parler.
 
 ```Rust
 use std::error::Error;
 use natural_tts::{*, models::parler::ParlerModel};
 
 fn main() -> Result<(), Box<dyn Error>>{
-    // Create the ParlerModel
-    let desc = "A female speaker in fast calming voice in a quiet environment".to_string();
-    let model = "parler-tts/parler-tts-mini-expresso".to_string();
-    let parler = ParlerModel::new(desc, model, false);
-
     // Create the NaturalTts using the Builder pattern
     let mut natural = NaturalTtsBuilder::default()
-        .parler_model(parler.unwrap())
+        .parler_model(ParlerModel::default())
         .default_model(Model::Parler)
         .build()?;
 
@@ -92,7 +78,7 @@ fn main() -> Result<(), Box<dyn Error>>{
 
 ```
 
-### Example of saying something using Gtts
+### Example of saying something using Gtts.
 
 ```Rust
 use std::error::Error;
@@ -112,7 +98,7 @@ fn main() -> Result<(), Box<dyn Error>>{
 
 ```
 
-### Example of saying something using MSEdge
+### Example of saying something using MSEdge.
 
 ```Rust
 use std::error::Error;
@@ -133,7 +119,7 @@ fn main() -> Result<(), Box<dyn Error>>{
 
 ```
 
-### Example of saying something using TTS
+### Example of saying something using TTS.
 
 ```Rust
 use std::error::Error;
@@ -154,7 +140,7 @@ fn main() -> Result<(), Box<dyn Error>>{
 
 ```
 
-### Example of saying something using Coqui Tts
+### Example of saying something using Coqui Tts.
 #### Disclaimer : Currently only in test feature.
 
 ```Rust
@@ -176,7 +162,7 @@ fn main() -> Result<(), Box<dyn Error>>{
 
 ```
 
-## Contributing
+## Contributing.
 
 Pull requests are welcome. For major changes, please open an issue first
 to discuss what you would like to change.
