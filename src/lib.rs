@@ -23,7 +23,7 @@ mod test;
 
 use thiserror::Error as TError;
 use std::error::Error;
-use crate::models::{msedge, tts_rs::TtsModel, NaturalModelTrait, coqui, parler, gtts, meta};
+use crate::models::{msedge, tts_rs::TtsModel, NaturalModelTrait, parler, gtts, meta};
 use derive_builder::Builder;
 
 #[derive(Builder, Clone, Default)]

@@ -1,71 +1,62 @@
-// Copyright (c) 2024-2025 natural-tts
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in all
-// copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-// SOFTWARE.
 pub mod languages;
-
-use pyo3::{prelude::*, types::PyModule};
+pub mod url;
+use std::io::Write;
+use minreq::get;
+use url::EncodedFragment;
 use super::*;
 
 #[derive(Clone, Debug)]
 pub struct GttsModel {
-    language : languages::Languages,
-    module: Py<PyModule>,
+    pub volume: f32,
+    pub language : languages::Languages,
+    pub tld: String,
+}
+
+pub enum Speed {
+    Normal,
+    Slow,
 }
 
 impl GttsModel{
-    pub fn new(language : Option<languages::Languages>) -> Result<Self, Box<dyn Error>>{
-        let m = Python::with_gil(|py|{
-            let activators = PyModule::from_code_bound(py, r#"
-from gtts import gTTS
-def say(message, path, lang):
-    tts = gTTS(message, lang)
-    tts.save(path)
-            "#, "gtts.py", "Gtts"
-            ).unwrap();
+    pub fn new(volume : f32, language : languages::Languages, tld : String) -> Self{
+        Self{
+            language,
+            volume,
+            tld,
+        }
+    }
+    
+    pub fn generate(&self, message : String, path : String) -> Result<(), Box<dyn Error>>{
+        let len = message.len();
+        if len > 100 {
+            return Err(format!(
+                "The text is too long. Max length is {}",
+                100
+            ).into());
+        }
+        let language = self.language.as_code();
+        let text = EncodedFragment::fragmenter(&message)?;
+        let rep = get(format!("https://translate.google.{}/translate_tts?ie=UTF-8&q={}&tl={}&total=1&idx=0&textlen={}&tl={}&client=tw-ob", self.tld, text.encoded, language, len, language))
+          .send()
+          .map_err(|e| format!("{}", e))?;
+        let mut file = File::create(&path)?;
+        let bytes = rep.as_bytes();
+        let _ = file.write_all(bytes)?;
 
-            let language = match language{
-                Some(x) => x,
-                None => languages::Languages::English,
-            };
-
-            return Self{
-                language,
-                module: activators.unbind(),
-            };
-        });
-
-        return Ok(m);
+        Ok(())
     }
 }
 
 impl Default for GttsModel{
     fn default() -> Self {
-        return Self::new(None).unwrap();
+        return Self::new(1.0, languages::Languages::English, String::from("com"));
     }
 }
 
 impl NaturalModelTrait for GttsModel{
     type SynthesizeType = f32;
     fn save(&mut self, message: String, path : String) -> Result<(), Box<dyn Error>> {
-        Python::with_gil(|py|{
-            let _ =self.module.getattr(py, "say").unwrap().call1(py, (message, path.clone(), self.language.as_code(),));
-        });
+        let _ = self.generate(message, path.clone())?;
         did_save(path.as_str())
     }
 

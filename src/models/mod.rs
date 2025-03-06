@@ -1,22 +1,3 @@
-// Copyright (c) 2024-2025 natural-tts
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in all
-// copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-// SOFTWARE.
 pub mod coqui;
 pub mod parler;
 pub mod gtts;
@@ -39,7 +20,7 @@ pub trait NaturalModelTrait {
 
 
 pub fn speak_model<T : NaturalModelTrait>(model : &mut T, message : String) -> Result<(), Box<dyn Error>>{
-    let path = "text_to_speech/output.wav";
+    let path = "output.wav";
     let actual = get_path(path.to_string());
     let _ = std::fs::remove_file(actual.clone());
     let _ = model.save(message.clone(), actual.clone());
@@ -49,7 +30,7 @@ pub fn speak_model<T : NaturalModelTrait>(model : &mut T, message : String) -> R
 }
 
 pub fn synthesize_model<T : NaturalModelTrait>(model : &mut T, message : String) -> Result<SynthesizedAudio<f32>, Box<dyn Error>>{
-    let path = "text_to_speech/output.wav";
+    let path = "output.wav";
     let actual = get_path(path.to_string());
     let _ = std::fs::remove_file(actual.clone());
     let _ = model.save(message.clone(), actual.clone());
@@ -61,6 +42,7 @@ pub fn synthesize_model<T : NaturalModelTrait>(model : &mut T, message : String)
 pub enum Spec{
     Wav(WavSpec),
     Synthesized(String, Vec<AudioMetadata>),
+    Unknown,
 }
 
 pub struct SynthesizedAudio<T : rodio::Sample>{
@@ -86,4 +68,3 @@ impl<T : rodio::Sample> SynthesizedAudio<T>{
         Err(_) => Err(Box::new(TtsError::NotSaved)),
      }
  }
-

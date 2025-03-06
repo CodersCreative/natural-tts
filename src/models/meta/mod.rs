@@ -1,34 +1,16 @@
-// Copyright (c) 2024-2025 natural-tts
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in all
-// copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-// SOFTWARE.
 pub mod bs1770;
 pub mod utils;
 
 use std::{path::PathBuf,io::Write,error::Error};
-use candle_transformers::{models::{encodec, quantized_metavoice::transformer as qtransformer, metavoice::{adapters, gpt, transformer}}, generation::LogitsProcessor};
+use candle_transformers::{generation::LogitsProcessor, models::{encodec, metavoice::{adapters, gpt, transformer}, quantized_metavoice::transformer as qtransformer}};
 use derive_builder::Builder;
 use candle_core::{DType, IndexOp, Tensor, Device};
 use candle_nn::VarBuilder;
 use hf_hub::api::sync::Api;
+use hound::WavSpec;
 use rand::{distributions::Distribution, SeedableRng};
 use utils::*;
-use crate::{utils::{get_path, play_wav_file, read_wav_file}, TtsError};
+use crate::{utils::{get_path, play_wav_file}, TtsError};
 use super::{did_save, NaturalModelTrait, SynthesizedAudio};
 
 #[derive(Builder, Clone, Default)]
@@ -194,7 +176,7 @@ impl MetaModel{
         return Ok((second_stage_model, encodec_model));
     }
 
-    pub fn run (&self, prompt : String, filename : String,) -> Result<(), Box<dyn Error>>{
+    pub fn generate (&self, prompt : String) -> Result<SynthesizedAudio<f32>, Box<dyn Error>>{
         let (second_stage_model, encodec_model) = self.get_secondary_models()?;
 
         let fs_tokenizer = get_fs_tokenizer(self.first_stage_meta.clone())?;
@@ -288,9 +270,20 @@ impl MetaModel{
         let pcm = pcm.i(0)?.i(0)?.to_dtype(DType::F32)?;
         let pcm = normalize_loudness(&pcm, 24_000, true)?;
         let pcm = pcm.to_vec1::<f32>()?;
-        let mut output = std::fs::File::create(&filename)?;
-        write_pcm_as_wav(&mut output, &pcm, 24_000)?;
-        Ok(())
+        return Ok(
+            SynthesizedAudio::new(
+                pcm, 
+                super::Spec::Wav(
+                    WavSpec{
+                        sample_rate: self.encodec_config.sampling_rate as u32,
+                        channels: self.encodec_config.audio_channels as u16,
+                        sample_format: hound::SampleFormat::Float,
+                        bits_per_sample: self.encodec_config.sampling_rate as u16,
+                    }
+                ), 
+                None
+            )
+        );
     }
 }
 
@@ -304,7 +297,9 @@ impl NaturalModelTrait for MetaModel{
     type SynthesizeType = f32;
 
     fn save(&mut self, message: String, path : String) -> Result<(), Box<dyn Error>>{
-        let _ = self.run(message, path.clone())?;
+        let data = self.synthesize(message)?;
+        let mut output = std::fs::File::create(&path)?;
+        write_pcm_as_wav(&mut output, &data.data, self.encodec_config.sampling_rate as u32)?;
         did_save(path.as_str())
     }
 
@@ -317,11 +312,7 @@ impl NaturalModelTrait for MetaModel{
     }
 
     fn synthesize(&mut self, message : String) -> Result<SynthesizedAudio<Self::SynthesizeType>, Box<dyn Error>> {
-        let path = get_path("temp.wav".to_string());
-        self.save(message, path.clone())?;
-        let d = read_wav_file(&path)?;
-        std::fs::remove_file(path)?;
-        Ok(d)
+        self.generate(message)
     }
 }
 
