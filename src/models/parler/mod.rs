@@ -27,14 +27,8 @@ pub struct ParlerModelOptions{
     top_p : Option<f64>, 
     #[builder(default = "299792458")]
     seed : u64,
-    #[builder(default = "None")]
-    revision : Option<String>,
     #[builder(default = "MODEL_NAME.to_string()")]
     model_name : String,
-    #[builder(default = "None")]
-    tokenizer_file : Option<String>,
-    #[builder(default = "None")]
-    config_file : Option<String>,
 }
 
 #[derive(Clone)]
@@ -65,21 +59,15 @@ impl ParlerModel{
         let api = Api::new()?;
         let device = device(options.cpu)?;
         
-        let revision = match options.revision {
-            Some(r) => r,
-            None => "main".to_string(),
-        };
+        let revision = "main".to_string();
 
         let repo = api.repo(hf_hub::Repo::with_revision(
-            options.model_name.clone(),
+            options.model_name,
             hf_hub::RepoType::Model,
             revision.clone(),
         ));
         
-        let config = match options.config_file {
-            Some(m) => m.into(),
-            None => repo.get("config.json")?,
-        };
+        let config = repo.get("config.json")?;
 
         let model_files = match repo.get("model.safetensors"){
             Ok(x) => vec![x],
@@ -91,10 +79,8 @@ impl ParlerModel{
         let config: Config = serde_json::from_reader(std::fs::File::open(config)?)?;
         let model = Model::new(&config, vb)?;
         
-        let tokenizer = match options.tokenizer_file {
-            Some(m) => m.into(),
-            None => repo.get("tokenizer.json")?,
-        };
+        let tokenizer = repo.get("tokenizer.json")?;
+
         let tokenizer = Tokenizer::from_file(tokenizer).unwrap();
         
         return Ok(Self{
@@ -129,7 +115,7 @@ impl ParlerModel{
         
         println!("Starting.");
         
-        let codes = self.model.generate(&prompt_tokens, &description_tokens, lp, 512)?;//self.max_steps)?;
+        let codes = self.model.generate(&prompt_tokens, &description_tokens, lp, 512)?;
         let codes = codes.to_dtype(DType::I64)?;
         codes.save_safetensors("codes", "out.safetensors")?;
         let codes = codes.unsqueeze(0)?;
@@ -162,11 +148,7 @@ impl Default for ParlerModel{
     fn default() -> Self {
         let desc = "A female speaker in fast calming voice in a quiet environment".to_string();
         let model = "parler-tts/parler-tts-mini-expresso".to_string();
-        return Self::new(ParlerModelOptions{
-            model_name : model,
-            description : desc,
-            ..Default::default()
-        }).unwrap();
+        return Self::new(ParlerModelOptionsBuilder::default().model_name(model).description(desc).build().unwrap()).unwrap();
     }
 }
 
