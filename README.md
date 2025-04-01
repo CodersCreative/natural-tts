@@ -13,8 +13,8 @@
 [Google Gtts](https://github.com/pndurette/gTTS)\
 [TTS-RS](https://github.com/ndarilek/tts-rs)\
 [MSEdge TTS](https://github.com/hs-CN/msedge-tts)\
-[MetaVoice TTS](https://github.com/metavoiceio/metavoice-src)
-[Coqui TTS](https://github.com/coqui-ai/TTS)\
+[MetaVoice TTS](https://github.com/metavoiceio/metavoice-src)\
+[Coqui TTS](https://github.com/coqui-ai/TTS)
 
 ### Example of saying something using Gtts but initializing every model.
 
