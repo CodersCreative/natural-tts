@@ -1,6 +1,10 @@
 use candle_core::{DType, Device, IndexOp, Result, Tensor};
 use candle_nn::{layer_norm, linear_b as linear, Activation, LayerNorm, Linear, VarBuilder};
-use candle_transformers::{generation::LogitsProcessor, models::{dac, t5}, utils::repeat_kv};
+use candle_transformers::{
+    generation::LogitsProcessor,
+    models::{dac, t5},
+    utils::repeat_kv,
+};
 
 #[derive(serde::Deserialize, Debug, Clone)]
 pub struct DecoderConfig {
@@ -116,8 +120,7 @@ impl Attention {
         }
 
         let key_states = repeat_kv(key_states, self.num_kv_groups)?.contiguous()?;
-        let value_states =
-            repeat_kv(value_states, self.num_kv_groups)?.contiguous()?;
+        let value_states = repeat_kv(value_states, self.num_kv_groups)?.contiguous()?;
 
         let attn_weights = query_states.matmul(&key_states.transpose(2, 3)?)?;
         let attn_weights = match attention_mask {
@@ -424,12 +427,7 @@ impl Model {
         Ok(all_audio_tokens)
     }
 
-    fn prepare_causal_mask(
-        &self,
-        q_len: usize,
-        kv_len: usize,
-        device: &Device,
-    ) -> Result<Tensor> {
+    fn prepare_causal_mask(&self, q_len: usize, kv_len: usize, device: &Device) -> Result<Tensor> {
         let mask: Vec<_> = (0..q_len)
             .flat_map(|i| {
                 (0..kv_len).map(move |j| {
@@ -444,4 +442,3 @@ impl Model {
         Tensor::from_slice(&mask, (q_len, kv_len), device)
     }
 }
-

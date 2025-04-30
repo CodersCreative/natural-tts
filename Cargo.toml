@@ -14,13 +14,13 @@ categories = ["science", "api-bindings"]
 [features]
 meta = ["dep:rand", "dep:tracing-chrome", "dep:tracing-subscriber", "dep:serde_json", "dep:hf-hub", "dep:candle-core", "dep:candle-nn", "dep:candle-transformers"]
 tts-rs = ["dep:tts"]
-coqui = []
+coqui = ["dep:pyo3"]
 parler = ["dep:tokenizers", "meta"]
 gtts = ["dep:percent-encoding", "dep:minreq"]
 msedge = ["dep:msedge-tts"]
-py_tts = []
+py_tts = ["coqui"]
 non_py_tts = ["parler", "msedge", "tts-rs", "gtts"]
-default = []
+default = ["gtts"]
 test = ["default", "coqui"]
 
 [dependencies]
@@ -31,7 +31,7 @@ derive_builder = { version = "0.20.2"}
 hf-hub = {version = "0.4.2", optional = true}
 hound = {version = "3.5.1"}
 msedge-tts = {version = "0.2.4", optional = true}
-pyo3 = { version = "0.23.5", features = ["auto-initialize"]}
+pyo3 = { version = "0.23.5", features = ["auto-initialize"], optional = true}
 rand = {version = "0.8.5", optional = true}
 rodio = {version = "0.20.1"}
 serde = "1.0.218"

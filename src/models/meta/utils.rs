@@ -1,14 +1,12 @@
-use candle_core::utils::{cuda_is_available, metal_is_available};
-use crate::TtsError;
 use super::bs1770;
+use crate::TtsError;
+use candle_core::utils::{cuda_is_available, metal_is_available};
+use candle_core::{Device, Tensor};
+use candle_transformers::models::metavoice::{tokenizers, transformer};
+use candle_transformers::models::quantized_metavoice::transformer as qtransformer;
 use std::error::Error;
 use std::io::Write;
 use std::path::PathBuf;
-use candle_core::{Tensor, Device};
-use candle_transformers::models::metavoice::{tokenizers, transformer};
-use candle_transformers::models::quantized_metavoice::transformer as qtransformer;
-
-
 
 #[derive(Clone, Debug)]
 pub enum Transformer {
@@ -16,7 +14,9 @@ pub enum Transformer {
     Quantized(qtransformer::Model),
 }
 
-pub fn get_fs_tokenizer(first_stage_meta : serde_json::Value) -> Result<tokenizers::BPE, Box<dyn Error>>{
+pub fn get_fs_tokenizer(
+    first_stage_meta: serde_json::Value,
+) -> Result<tokenizers::BPE, Box<dyn Error>> {
     let first_stage_tokenizer = match first_stage_meta.as_object() {
         None => return Err(TtsError::Json.into()),
         Some(j) => match j.get("tokenizer") {
@@ -34,7 +34,7 @@ pub fn device(cpu: bool) -> Result<Device, Box<dyn Error>> {
         Ok(Device::new_cuda(0)?)
     } else if metal_is_available() {
         Ok(Device::new_metal(0)?)
-    }else{
+    } else {
         Ok(Device::Cpu)
     }
 }
@@ -45,8 +45,7 @@ pub fn hub_load_safetensors(
 ) -> Result<Vec<std::path::PathBuf>, Box<dyn Error>> {
     let json_file = repo.get(json_file).unwrap();
     let json_file = std::fs::File::open(json_file)?;
-    let json: serde_json::Value =
-        serde_json::from_reader(&json_file).unwrap();
+    let json: serde_json::Value = serde_json::from_reader(&json_file).unwrap();
     let weight_map = match json.get("weight_map") {
         None => return Err("no weight map in {json_file:?}".into()),
         Some(serde_json::Value::Object(map)) => map,

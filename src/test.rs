@@ -1,74 +1,74 @@
 #[cfg(test)]
-use crate::{*, models::{gtts::GttsModel, tts_rs::TtsModel, parler::ParlerModel, msedge::MSEdgeModel, meta::MetaModel}};
+use crate::{
+    models::{
+        gtts::GttsModel, meta::MetaModel, msedge::MSEdgeModel, parler::ParlerModel,
+        tts_rs::TtsModel,
+    },
+    *,
+};
 
 #[cfg(feature = "gtts")]
 #[test]
-fn gtts_test(){
+fn gtts_test() {
     let mut natural = NaturalTtsBuilder::default()
         .gtts_model(GttsModel::default())
         .default_model(Model::Gtts)
-        .build().unwrap();
+        .build()
+        .unwrap();
     let _ = natural.say("Hello, World!".to_string());
 }
 
 #[cfg(feature = "parler")]
 #[test]
-fn parler_test(){
+fn parler_test() {
     let mut natural = NaturalTtsBuilder::default()
         .parler_model(ParlerModel::default())
         .default_model(Model::Parler)
-        .build().unwrap();
+        .build()
+        .unwrap();
     let _ = natural.say("Hello, World!".to_string());
 }
 
 #[cfg(feature = "msedge")]
 #[test]
-fn msedge_test(){
+fn msedge_test() {
     let mut natural = NaturalTtsBuilder::default()
         .msedge_model(MSEdgeModel::default())
         .default_model(Model::MSEdge)
-        .build().unwrap();
+        .build()
+        .unwrap();
     let _ = natural.say("Hello, World!".to_string());
 }
 
 #[cfg(feature = "tts-rs")]
 #[test]
-fn tts_test(){
+fn tts_test() {
     let mut natural = NaturalTtsBuilder::default()
         .tts_model(TtsModel::default())
         .default_model(Model::TTS)
-        .build().unwrap();
+        .build()
+        .unwrap();
     let _ = natural.say("Hello, World!".to_string());
 }
 
 #[cfg(feature = "meta")]
 #[test]
-fn meta_test(){
+fn meta_test() {
     let mut natural = NaturalTtsBuilder::default()
         .meta_model(MetaModel::default())
         .default_model(Model::Meta)
-        .build().unwrap();
+        .build()
+        .unwrap();
     let _ = natural.say("Hello, World!".to_string());
 }
 
 #[cfg(feature = "coqui")]
 #[test]
-fn coqui_test(){
+fn coqui_test() {
     let mut natural = NaturalTtsBuilder::default()
         .coqui_model(CoquiModel::default())
         .default_model(Model::Coqui)
-        .build().unwrap();
-    let _ = natural.say("Hello, World!".to_string());
-}
-
-#[test]
-fn all_tts(){
-    let mut natural = NaturalTtsBuilder::default()
-        .default_model(Model::Gtts)
-        .gtts_model(GttsModel::default())
-        .parler_model(ParlerModel::default())
-        .tts_model(TtsModel::default())
-        .build().unwrap();
-
+        .build()
+        .unwrap();
     let _ = natural.say("Hello, World!".to_string());
 }

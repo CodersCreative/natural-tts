@@ -17,34 +17,38 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
-use hound::WavReader;
-use std::{error::Error, io::Write};
-use rodio::{cpal::FromSample, buffer::SamplesBuffer, Decoder, Sink, OutputStream};
 use crate::models::{Spec::Wav, SynthesizedAudio};
+use hound::WavReader;
+use rodio::{buffer::SamplesBuffer, cpal::FromSample, Decoder, OutputStream, Sink};
+use std::{error::Error, io::Write};
 
 pub fn read_wav_file(path: &str) -> Result<SynthesizedAudio<f32>, Box<dyn Error>> {
     let mut reader = WavReader::open(path)?;
     let mut f32_samples: Vec<f32> = Vec::new();
 
     reader.samples::<f32>().for_each(|s| {
-        if let Ok(sample) = s{
+        if let Ok(sample) = s {
             f32_samples.push(sample as f32);
         }
     });
 
-    
-    Ok(SynthesizedAudio::new(f32_samples, Wav(reader.spec()), Some(reader.duration() as i32)))
+    Ok(SynthesizedAudio::new(
+        f32_samples,
+        Wav(reader.spec()),
+        Some(reader.duration() as i32),
+    ))
 }
 
-pub fn get_path(path : String) -> String{
+pub fn get_path(path: String) -> String {
     let mut new_path = env!("CARGO_MANIFEST_DIR").to_string();
     new_path.push_str(&format!("/src/{}", path));
     return new_path;
 }
 
-pub fn play_audio<T>(data: Vec<T>, rate : u32)
+pub fn play_audio<T>(data: Vec<T>, rate: u32)
 where
-    T : rodio::Sample + Send + 'static, f32 : FromSample<T>    
+    T: rodio::Sample + Send + 'static,
+    f32: FromSample<T>,
 {
     let (_stream, handle) = rodio::OutputStream::try_default().unwrap();
     let source = SamplesBuffer::new(1, rate, data);
@@ -55,7 +59,7 @@ where
     sink.sleep_until_end();
 }
 
-pub fn play_wav_file(path: &str) -> Result<(), Box<dyn Error>>{
+pub fn play_wav_file(path: &str) -> Result<(), Box<dyn Error>> {
     let file = std::fs::File::open(path)?;
     let decoder = Decoder::new(file)?;
     let (_stream, stream_handle) = OutputStream::try_default()?;
@@ -63,7 +67,7 @@ pub fn play_wav_file(path: &str) -> Result<(), Box<dyn Error>>{
 
     sink.append(decoder);
     sink.sleep_until_end();
-    
+
     Ok(())
 }
 
@@ -76,22 +80,51 @@ pub fn save_wav(data: &[f32], filename: &str, sample_rate: u32) -> Result<(), st
 
     let header = [
         // RIFF chunk
-        b'R', b'I', b'F', b'F',
-        (chunk_size & 0xff) as u8, (chunk_size >> 8 & 0xff) as u8, (chunk_size >> 16 & 0xff) as u8, (chunk_size >> 24 & 0xff) as u8,
+        b'R',
+        b'I',
+        b'F',
+        b'F',
+        (chunk_size & 0xff) as u8,
+        (chunk_size >> 8 & 0xff) as u8,
+        (chunk_size >> 16 & 0xff) as u8,
+        (chunk_size >> 24 & 0xff) as u8,
         // WAVE chunk
-        b'W', b'A', b'V', b'E',
+        b'W',
+        b'A',
+        b'V',
+        b'E',
         // fmt subchunk
-        b'f', b'm', b't', b' ',
-        16, 0, 0, 0, // Subchunk size (16 for PCM format)
-        pcm as u8, 0, // PCM format
-        1, 0, // Mono channel
-        (sample_rate & 0xff) as u8, (sample_rate >> 8 & 0xff) as u8, (sample_rate >> 16 & 0xff) as u8, (sample_rate >> 24 & 0xff) as u8,
-        4, 0, // Average bytes per second (4 for 32-bit samples)
-        4, 0, // Block align (4 for 32-bit samples, mono)
-        bits_per_sample as u8, 0, // Bits per sample
+        b'f',
+        b'm',
+        b't',
+        b' ',
+        16,
+        0,
+        0,
+        0, // Subchunk size (16 for PCM format)
+        pcm as u8,
+        0, // PCM format
+        1,
+        0, // Mono channel
+        (sample_rate & 0xff) as u8,
+        (sample_rate >> 8 & 0xff) as u8,
+        (sample_rate >> 16 & 0xff) as u8,
+        (sample_rate >> 24 & 0xff) as u8,
+        4,
+        0, // Average bytes per second (4 for 32-bit samples)
+        4,
+        0, // Block align (4 for 32-bit samples, mono)
+        bits_per_sample as u8,
+        0, // Bits per sample
         // data subchunk
-        b'd', b'a', b't', b'a',
-        (data.len() * 4) as u8, (data.len() * 4 >> 8 & 0xff) as u8, (data.len() * 4 >> 16 & 0xff) as u8, (data.len() * 4 >> 24 & 0xff) as u8,
+        b'd',
+        b'a',
+        b't',
+        b'a',
+        (data.len() * 4) as u8,
+        (data.len() * 4 >> 8 & 0xff) as u8,
+        (data.len() * 4 >> 16 & 0xff) as u8,
+        (data.len() * 4 >> 24 & 0xff) as u8,
     ];
     file.write_all(&header)?;
 
