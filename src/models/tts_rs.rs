@@ -1,6 +1,6 @@
-use super::{NaturalModelTrait, SynthesizedAudio};
+use super::{AudioHandler, NaturalModelTrait, SynthesizedAudio};
 use crate::TtsError;
-use std::error::Error;
+use std::{error::Error, path::PathBuf};
 use tts::Tts;
 
 #[derive(Clone)]
@@ -21,26 +21,27 @@ impl Default for TtsModel {
 
 impl NaturalModelTrait for TtsModel {
     type SynthesizeType = f32;
-    fn save(&mut self, message: String, path: String) -> Result<(), Box<dyn Error>> {
+    fn save(&mut self, message: String, path: &PathBuf) -> Result<(), Box<dyn Error>> {
         Err(TtsError::NotSupported.into())
     }
 
-    fn say(&mut self, message: String) -> Result<(), Box<dyn Error>> {
+    fn start(&mut self, message: String, path : &PathBuf) -> Result<AudioHandler, Box<dyn Error>> {
         let is_speaking = self.0.is_speaking();
-
+        
         if let Ok(speaking) = is_speaking {
             if speaking {
-                return Ok(());
+                return Ok(AudioHandler::Tts);
             }
         }
 
         let _ = self.0.speak(message, false);
-        Ok(())
+        Ok(AudioHandler::Tts)
     }
 
     fn synthesize(
         &mut self,
         message: String,
+        path : &PathBuf
     ) -> Result<SynthesizedAudio<Self::SynthesizeType>, Box<dyn Error>> {
         Err(TtsError::NotSupported.into())
     }

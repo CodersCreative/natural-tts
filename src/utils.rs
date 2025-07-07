@@ -18,22 +18,22 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 use crate::models::{Spec::Wav, SynthesizedAudio};
-use hound::WavReader;
-use rodio::{buffer::SamplesBuffer, cpal::FromSample, Decoder, OutputStream, Sink};
-use std::{error::Error, io::Write};
+use hound::{Sample, WavReader};
+use rodio::{buffer::SamplesBuffer, cpal::FromSample, Decoder, OutputStream,  Sink};
+use std::{error::Error, io::Write, path::{Path, PathBuf}};
 
-pub fn read_wav_file(path: &str) -> Result<SynthesizedAudio<f32>, Box<dyn Error>> {
+pub fn read_wav_file<T : Sample + Send + rodio::Sample>(path: &PathBuf) -> Result<SynthesizedAudio<T>, Box<dyn Error>> {
     let mut reader = WavReader::open(path)?;
-    let mut f32_samples: Vec<f32> = Vec::new();
+    let mut samples: Vec<T> = Vec::new();
 
-    reader.samples::<f32>().for_each(|s| {
+    reader.samples::<T>().for_each(|s| {
         if let Ok(sample) = s {
-            f32_samples.push(sample as f32);
+            samples.push(sample as T);
         }
     });
 
     Ok(SynthesizedAudio::new(
-        f32_samples,
+        samples,
         Wav(reader.spec()),
         Some(reader.duration() as i32),
     ))
@@ -45,7 +45,7 @@ pub fn get_path(path: String) -> String {
     return new_path;
 }
 
-pub fn play_audio<T>(data: Vec<T>, rate: u32)
+pub fn play_audio<T>(data: &[T], rate: u32) -> Result<Sink, Box<dyn Error>>
 where
     T: rodio::Sample + Send + 'static,
     f32: FromSample<T>,
@@ -56,22 +56,20 @@ where
 
     sink.append(source);
 
-    sink.sleep_until_end();
+    Ok(sink)
 }
 
-pub fn play_wav_file(path: &str) -> Result<(), Box<dyn Error>> {
+pub fn play_wav_file(path: &PathBuf) -> Result<Sink, Box<dyn Error>> {
     let file = std::fs::File::open(path)?;
     let decoder = Decoder::new(file)?;
     let (_stream, stream_handle) = OutputStream::try_default()?;
     let sink = Sink::try_new(&stream_handle)?;
 
     sink.append(decoder);
-    sink.sleep_until_end();
-
-    Ok(())
+    Ok(sink)
 }
 
-pub fn save_wav(data: &[f32], filename: &str, sample_rate: u32) -> Result<(), std::io::Error> {
+pub fn save_wav(data: &[f32], filename: &PathBuf, sample_rate: u32) -> Result<(), std::io::Error> {
     let mut file = std::fs::File::create(filename)?;
 
     // Write WAV header

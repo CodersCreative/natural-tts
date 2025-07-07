@@ -49,11 +49,11 @@ impl CoquiModel {
         return m;
     }
 
-    pub fn generate(&self, message: String, path: String) -> Result<(), Box<dyn Error>> {
+    pub fn generate(&self, message: String, path: &PathBuf) -> Result<(), Box<dyn Error>> {
         return Python::with_gil(|py| -> Result<(), Box<dyn Error>> {
             self.model
                 .getattr(py, "tts_to_file")?
-                .call1(py, (("text", message), ("file_path", path)))?;
+                .call1(py, (("text", message), ("file_path", path.to_str().unwrap())))?;
             Ok(())
         });
     }
@@ -68,19 +68,8 @@ impl Default for CoquiModel {
 impl NaturalModelTrait for CoquiModel {
     type SynthesizeType = f32;
 
-    fn save(&mut self, message: String, path: String) -> Result<(), Box<dyn Error>> {
-        let _ = self.generate(message, path.clone())?;
-        did_save(path.as_str())
-    }
-
-    fn say(&mut self, message: String) -> Result<(), Box<dyn Error>> {
-        speak_model(self, message)
-    }
-
-    fn synthesize(
-        &mut self,
-        message: String,
-    ) -> Result<SynthesizedAudio<Self::SynthesizeType>, Box<dyn Error>> {
-        synthesize_model(self, message)
+    fn save(&mut self, message: String, path: &PathBuf) -> Result<(), Box<dyn Error>> {
+        let _ = self.generate(message, path)?;
+        did_save(path)
     }
 }

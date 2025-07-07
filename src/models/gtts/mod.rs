@@ -26,7 +26,7 @@ impl GttsModel {
         }
     }
 
-    pub fn generate(&self, message: String, path: String) -> Result<(), Box<dyn Error>> {
+    pub fn generate(&self, message: String, path: &PathBuf) -> Result<(), Box<dyn Error>> {
         let len = message.len();
         if len > 100 {
             return Err(format!("The text is too long. Max length is {}", 100).into());
@@ -36,7 +36,7 @@ impl GttsModel {
         let rep = get(format!("https://translate.google.{}/translate_tts?ie=UTF-8&q={}&tl={}&total=1&idx=0&textlen={}&tl={}&client=tw-ob", self.tld, text.encoded, language, len, language))
           .send()
           .map_err(|e| format!("{}", e))?;
-        let mut file = File::create(&path)?;
+        let mut file = File::create(path)?;
         let bytes = rep.as_bytes();
         let _ = file.write_all(bytes)?;
 
@@ -52,19 +52,8 @@ impl Default for GttsModel {
 
 impl NaturalModelTrait for GttsModel {
     type SynthesizeType = f32;
-    fn save(&mut self, message: String, path: String) -> Result<(), Box<dyn Error>> {
-        let _ = self.generate(message, path.clone())?;
-        did_save(path.as_str())
-    }
-
-    fn say(&mut self, message: String) -> Result<(), Box<dyn Error>> {
-        speak_model(self, message)
-    }
-
-    fn synthesize(
-        &mut self,
-        message: String,
-    ) -> Result<SynthesizedAudio<Self::SynthesizeType>, Box<dyn Error>> {
-        synthesize_model(self, message)
+    fn save(&mut self, message: String, path: &PathBuf) -> Result<(), Box<dyn Error>> {
+        let _ = self.generate(message, path)?;
+        did_save(path)
     }
 }

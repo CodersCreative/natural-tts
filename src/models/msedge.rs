@@ -1,4 +1,6 @@
-use super::{NaturalModelTrait, Spec, SynthesizedAudio};
+use std::path::PathBuf;
+
+use super::{AudioHandler, NaturalModelTrait, Spec, SynthesizedAudio};
 use crate::utils::{play_audio, save_wav};
 use msedge_tts::{
     tts::{client::connect, SpeechConfig as OtherConfig},
@@ -31,36 +33,36 @@ impl Default for MSEdgeModel {
 
 impl NaturalModelTrait for MSEdgeModel {
     type SynthesizeType = f32;
-    fn say(&mut self, message: String) -> Result<(), Box<dyn std::error::Error>> {
-        let synthesized = Self::synthesize(self, message)?;
+    fn start(&mut self, message: String, path : &PathBuf) -> Result<AudioHandler, Box<dyn std::error::Error>> {
+        let synthesized = Self::synthesize(self, message, path)?;
 
         let rate = match self.config.rate {
             x if x <= 0 => 16000,
             x => x,
         };
 
-        match synthesized.spec {
-            Spec::Wav(x) => play_audio(synthesized.data, x.sample_rate),
-            _ => play_audio(synthesized.data, rate as u32),
-        }
-        Ok(())
+        Ok(AudioHandler::Sink(match synthesized.spec {
+            Spec::Wav(x) => play_audio(&synthesized.data, x.sample_rate),
+            _ => play_audio(&synthesized.data, rate as u32),
+        }?))
     }
 
-    fn save(&mut self, message: String, path: String) -> Result<(), Box<dyn std::error::Error>> {
-        let synthesized = Self::synthesize(self, message)?;
+    fn save(&mut self, message: String, path: &PathBuf) -> Result<(), Box<dyn std::error::Error>> {
+        let synthesized = Self::synthesize(self, message, path)?;
 
         let rate = match self.config.rate {
             x if x <= 0 => 16000,
             x => x,
         };
 
-        let _ = save_wav(&synthesized.data, path.as_str(), rate as u32);
+        let _ = save_wav(&synthesized.data, path, rate as u32);
         Ok(())
     }
 
     fn synthesize(
         &mut self,
         message: String,
+        path : &PathBuf
     ) -> Result<super::SynthesizedAudio<Self::SynthesizeType>, Box<dyn std::error::Error>> {
         let mut tts = connect().unwrap();
         let audio = tts.synthesize(message.as_str(), &self.config.as_msedge())?;

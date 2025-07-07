@@ -1,11 +1,20 @@
 #[cfg(test)]
-use crate::{
-    models::{
-        gtts::GttsModel, meta::MetaModel, msedge::MSEdgeModel, parler::ParlerModel,
-        tts_rs::TtsModel,
-    },
-    *,
-};
+
+#[cfg(feature = "gtts")]
+use crate::models::coqui::CoquiModel;
+#[cfg(feature = "gtts")]
+use crate::models::gtts::GttsModel;
+#[cfg(feature = "meta")]
+use crate::models::meta::MetaModel;
+#[cfg(feature = "msedge")]
+use crate::models::msedge::MSEdgeModel;
+#[cfg(feature = "parler")]
+use crate::models::parler::ParlerModel;
+#[cfg(feature = "tts-rs")]
+use crate::models::tts_rs::TtsModel;
+
+use std::{error::Error, path::PathBuf};
+use crate::{Model, NaturalTtsBuilder};
 
 #[cfg(feature = "gtts")]
 #[test]
@@ -15,7 +24,7 @@ fn gtts_test() {
         .default_model(Model::Gtts)
         .build()
         .unwrap();
-    let _ = natural.say("Hello, World!".to_string());
+    let _ = natural.start("Hello, World!".to_string(), &PathBuf::from("output.wav"));
 }
 
 #[cfg(feature = "parler")]
@@ -26,7 +35,7 @@ fn parler_test() {
         .default_model(Model::Parler)
         .build()
         .unwrap();
-    let _ = natural.say("Hello, World!".to_string());
+    let _ = natural.start("Hello, World!".to_string(), &PathBuf::from("output.wav"));
 }
 
 #[cfg(feature = "msedge")]
@@ -37,7 +46,7 @@ fn msedge_test() {
         .default_model(Model::MSEdge)
         .build()
         .unwrap();
-    let _ = natural.say("Hello, World!".to_string());
+    let _ = natural.start("Hello, World!".to_string(), &PathBuf::from("output.wav"));
 }
 
 #[cfg(feature = "tts-rs")]
@@ -48,7 +57,7 @@ fn tts_test() {
         .default_model(Model::TTS)
         .build()
         .unwrap();
-    let _ = natural.say("Hello, World!".to_string());
+    let _ = natural.start("Hello, World!".to_string(), &PathBuf::from("output.wav"));
 }
 
 #[cfg(feature = "meta")]
@@ -59,7 +68,7 @@ fn meta_test() {
         .default_model(Model::Meta)
         .build()
         .unwrap();
-    let _ = natural.say("Hello, World!".to_string());
+    let _ = natural.start("Hello, World!".to_string(), &PathBuf::from("output.wav"));
 }
 
 #[cfg(feature = "coqui")]
@@ -70,5 +79,5 @@ fn coqui_test() {
         .default_model(Model::Coqui)
         .build()
         .unwrap();
-    let _ = natural.say("Hello, World!".to_string());
+    let _ = natural.start("Hello, World!".to_string(), &PathBuf::from("output.wav"));
 }

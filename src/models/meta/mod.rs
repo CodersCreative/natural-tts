@@ -1,9 +1,8 @@
 pub mod bs1770;
 pub mod utils;
 
-use super::{did_save, NaturalModelTrait, SynthesizedAudio};
+use super::{did_save, AudioHandler, NaturalModelTrait, SynthesizedAudio};
 use crate::{
-    utils::{get_path, play_wav_file},
     TtsError,
 };
 use candle_core::{DType, Device, IndexOp, Tensor};
@@ -68,8 +67,6 @@ impl MetaModel {
         use tracing_chrome::ChromeLayerBuilder;
         use tracing_subscriber::prelude::*;
 
-        println!("{:?}", &options);
-
         let _guard = if options.tracing {
             let (chrome_layer, guard) = ChromeLayerBuilder::new().build();
             tracing_subscriber::registry().with(chrome_layer).init();
@@ -101,7 +98,6 @@ impl MetaModel {
             .model("sanchit-gandhi/encodec_24khz".to_string())
             .get("model.safetensors")?;
 
-        println!("Done");
         return Ok(Self {
             first_stage_model,
             device,
@@ -174,17 +170,14 @@ impl MetaModel {
             let ctxt = &tokens[start_pos..];
             let input = Tensor::new(ctxt, &self.device)?;
             let input = Tensor::stack(&[&input, &input], 0)?;
-            println!("gen");
             let logits =
                 self.first_stage_model
                     .forward(&input, &spk_emb, tokens.len() - context_size)?;
-            println!("Logits {:?}", logits);
             //let logits0 = logits.i((0, 0))?;
             //let logits1 = logits.i((1, 0))?;
             let logits = logits.i((0, logits.dim(1)? - 1))?;
             //let logits = ((logits0 * self.guidance_scale)? + logits1 * (1. - self.guidance_scale))?;
             let logits = logits.to_dtype(self.dtype)?;
-            println!("Logits 2 {:?}", logits);
             let next_token = match logits_processor.sample(&logits) {
                 Ok(x) => x,
                 Err(e) => {
@@ -192,7 +185,6 @@ impl MetaModel {
                     continue;
                 }
             };
-            println!("tokened");
             tokens.push(next_token);
             std::io::stdout().flush()?;
             if next_token == 2048 {
@@ -246,7 +238,6 @@ impl MetaModel {
         //let tilted_encodec = adapters::TiltedEncodec::new(512);
         let codes = codes.i(0)?.to_vec2::<u32>()?;
         let (_, audio_ids) = tilted_encodec.decode(&codes);
-        println!("Ids {:?}", audio_ids);
         let audio_ids = Tensor::new(audio_ids, &encodec_device)
             .unwrap()
             .unsqueeze(0)
@@ -257,7 +248,6 @@ impl MetaModel {
         let pcm = normalize_loudness(&pcm, 24_000, true)?;
 
         let pcm = pcm.to_vec1::<f32>()?;
-        println!("Done");
         return Ok(SynthesizedAudio::new(
             pcm,
             super::Spec::Wav(WavSpec {
@@ -280,24 +270,17 @@ impl Default for MetaModel {
 impl NaturalModelTrait for MetaModel {
     type SynthesizeType = f32;
 
-    fn save(&mut self, message: String, path: String) -> Result<(), Box<dyn Error>> {
-        let data = self.synthesize(message)?;
+    fn save(&mut self, message: String, path: &PathBuf) -> Result<(), Box<dyn Error>> {
+        let data = self.synthesize(message, path)?;
         let mut output = std::fs::File::create(&path)?;
         write_pcm_as_wav(&mut output, &data.data, 24_000 as u32)?;
-        did_save(path.as_str())
-    }
-
-    fn say(&mut self, message: String) -> Result<(), Box<dyn Error>> {
-        let path = get_path("temp.wav".to_string());
-        self.save(message, path.clone())?;
-        play_wav_file(&path)?;
-        std::fs::remove_file(path)?;
-        Ok(())
+        did_save(path)
     }
 
     fn synthesize(
         &mut self,
         message: String,
+        path : &PathBuf
     ) -> Result<SynthesizedAudio<Self::SynthesizeType>, Box<dyn Error>> {
         self.generate(message)
     }

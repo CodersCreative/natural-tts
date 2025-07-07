@@ -18,43 +18,48 @@ use crate::{
 use hound::WavSpec;
 #[cfg(feature = "msedge")]
 use msedge_tts::tts::AudioMetadata;
-use rodio::Sample;
-use std::{error::Error, fs::File};
+use rodio::{Sample, Sink};
+use tts::Tts;
+use std::{error::Error, fs::File, path::{Path, PathBuf}};
+
+pub enum AudioHandler {
+    Sink(Sink),
+    Tts,
+}
+
+impl Clone for AudioHandler{
+    fn clone(&self) -> Self {
+        match self{
+            Self::Sink(x) => panic!("Sink cant be cloned"),
+            Self::Tts => Self::Tts,
+        }
+    }
+}
+
+impl From<Sink> for AudioHandler{
+    fn from(value: Sink) -> Self {
+        Self::Sink(value)
+    }
+}
 
 pub trait NaturalModelTrait {
-    type SynthesizeType: Sample + Send;
-    fn save(&mut self, message: String, path: String) -> Result<(), Box<dyn Error>>;
-    fn say(&mut self, message: String) -> Result<(), Box<dyn Error>>;
+    type SynthesizeType: Sample + Send + hound::Sample;
+    fn save(&mut self, message: String, path: &PathBuf) -> Result<(), Box<dyn Error>>;
+    
+    fn start(&mut self, message: String, path : &PathBuf) -> Result<AudioHandler, Box<dyn Error>>{
+        let _ = self.save(message.clone(), path);
+        Ok(AudioHandler::Sink(play_wav_file(&path)?))
+    }
+
     fn synthesize(
         &mut self,
         message: String,
-    ) -> Result<SynthesizedAudio<Self::SynthesizeType>, Box<dyn Error>>;
-}
-
-pub fn speak_model<T: NaturalModelTrait>(
-    model: &mut T,
-    message: String,
-) -> Result<(), Box<dyn Error>> {
-    let path = "output.wav";
-    let actual = get_path(path.to_string());
-    let _ = std::fs::remove_file(actual.clone());
-    let _ = model.save(message.clone(), actual.clone());
-    let _ = play_wav_file(&actual);
-    let _ = std::fs::remove_file(actual);
-    Ok(())
-}
-
-pub fn synthesize_model<T: NaturalModelTrait>(
-    model: &mut T,
-    message: String,
-) -> Result<SynthesizedAudio<f32>, Box<dyn Error>> {
-    let path = "output.wav";
-    let actual = get_path(path.to_string());
-    let _ = std::fs::remove_file(actual.clone());
-    let _ = model.save(message.clone(), actual.clone());
-    let rwf = read_wav_file(&actual)?;
-    let _ = std::fs::remove_file(actual);
-    Ok(rwf)
+        path : &PathBuf,
+    ) -> Result<SynthesizedAudio<Self::SynthesizeType>, Box<dyn Error>>{
+        let _ = self.save(message.clone(), path);
+        let rwf = read_wav_file(path)?;
+        Ok(rwf)
+    }
 }
 
 pub enum Spec {
@@ -80,7 +85,7 @@ impl<T: rodio::Sample> SynthesizedAudio<T> {
     }
 }
 
-pub fn did_save(path: &str) -> Result<(), Box<dyn Error>> {
+pub fn did_save(path: &PathBuf) -> Result<(), Box<dyn Error>> {
     let file = File::open(path);
     match file {
         Ok(_) => Ok(()),

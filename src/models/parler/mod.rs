@@ -1,12 +1,12 @@
 pub mod model;
-use super::{did_save, speak_model, NaturalModelTrait, SynthesizedAudio};
+use super::{did_save, NaturalModelTrait, SynthesizedAudio};
 use candle_core::{DType, Device, IndexOp, Tensor};
 use candle_nn::VarBuilder;
 use derive_builder::Builder;
 use hf_hub::api::sync::Api;
 use hound::WavSpec;
 use model::*;
-use std::error::Error;
+use std::{error::Error, path::PathBuf};
 use tokenizers::Tokenizer;
 
 use super::meta::utils::*;
@@ -117,8 +117,6 @@ impl ParlerModel {
             self.top_p,
         );
 
-        println!("Starting.");
-
         let codes = self
             .model
             .generate(&prompt_tokens, &description_tokens, lp, 512)?;
@@ -164,26 +162,14 @@ impl Default for ParlerModel {
 
 impl NaturalModelTrait for ParlerModel {
     type SynthesizeType = f32;
-    fn save(&mut self, message: String, path: String) -> Result<(), Box<dyn Error>> {
-        let data = self.synthesize(message)?;
+    fn save(&mut self, message: String, path: &PathBuf) -> Result<(), Box<dyn Error>> {
+        let data = self.synthesize(message, path)?;
         let mut output = std::fs::File::create(&path)?;
-        println!("{:?}", self.config.audio_encoder.sampling_rate);
         write_pcm_as_wav(
             &mut output,
             &data.data,
             self.config.audio_encoder.sampling_rate,
         )?;
-        did_save(path.as_str())
-    }
-
-    fn say(&mut self, message: String) -> Result<(), Box<dyn Error>> {
-        speak_model(self, message)
-    }
-
-    fn synthesize(
-        &mut self,
-        message: String,
-    ) -> Result<SynthesizedAudio<Self::SynthesizeType>, Box<dyn Error>> {
-        self.generate(message)
+        did_save(path)
     }
 }

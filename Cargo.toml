@@ -20,8 +20,8 @@ gtts = ["dep:percent-encoding", "dep:minreq"]
 msedge = ["dep:msedge-tts"]
 py_tts = ["coqui"]
 non_py_tts = ["parler", "msedge", "tts-rs", "gtts"]
-default = ["gtts"]
-test = ["default", "coqui"]
+# default = ["gtts"]
+default = ["py_tts", "non_py_tts"]
 
 [dependencies]
 candle-core = { version = "0.8.3", optional = true }
