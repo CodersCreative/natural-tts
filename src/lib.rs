@@ -128,8 +128,6 @@ impl NaturalTts {
                 },
             }?);
 
-            let _ = self.resume();
-
             return Ok(());
         }
 
