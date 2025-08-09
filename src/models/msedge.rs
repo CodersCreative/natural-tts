@@ -33,7 +33,11 @@ impl Default for MSEdgeModel {
 
 impl NaturalModelTrait for MSEdgeModel {
     type SynthesizeType = f32;
-    fn start(&mut self, message: String, path : &PathBuf) -> Result<AudioHandler, Box<dyn std::error::Error>> {
+    fn start(
+        &mut self,
+        message: String,
+        path: &PathBuf,
+    ) -> Result<AudioHandler, Box<dyn std::error::Error>> {
         let synthesized = Self::synthesize(self, message, path)?;
 
         let rate = match self.config.rate {
@@ -62,7 +66,7 @@ impl NaturalModelTrait for MSEdgeModel {
     fn synthesize(
         &mut self,
         message: String,
-        path : &PathBuf
+        _path: &PathBuf,
     ) -> Result<super::SynthesizedAudio<Self::SynthesizeType>, Box<dyn std::error::Error>> {
         let mut tts = connect().unwrap();
         let audio = tts.synthesize(message.as_str(), &self.config.as_msedge())?;

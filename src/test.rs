@@ -1,5 +1,4 @@
 #[cfg(test)]
-
 #[cfg(feature = "gtts")]
 use crate::models::coqui::CoquiModel;
 #[cfg(feature = "gtts")]
@@ -13,8 +12,8 @@ use crate::models::parler::ParlerModel;
 #[cfg(feature = "tts-rs")]
 use crate::models::tts_rs::TtsModel;
 
-use std::{error::Error, path::PathBuf};
 use crate::{Model, NaturalTtsBuilder};
+use std::path::PathBuf;
 
 #[cfg(feature = "gtts")]
 #[test]

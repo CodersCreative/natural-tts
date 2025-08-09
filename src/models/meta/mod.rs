@@ -1,10 +1,8 @@
 pub mod bs1770;
 pub mod utils;
 
-use super::{did_save, AudioHandler, NaturalModelTrait, SynthesizedAudio};
-use crate::{
-    TtsError,
-};
+use super::{did_save, NaturalModelTrait, SynthesizedAudio};
+use crate::TtsError;
 use candle_core::{DType, Device, IndexOp, Tensor};
 use candle_nn::VarBuilder;
 use candle_transformers::{
@@ -280,7 +278,7 @@ impl NaturalModelTrait for MetaModel {
     fn synthesize(
         &mut self,
         message: String,
-        path : &PathBuf
+        _path: &PathBuf,
     ) -> Result<SynthesizedAudio<Self::SynthesizeType>, Box<dyn Error>> {
         self.generate(message)
     }

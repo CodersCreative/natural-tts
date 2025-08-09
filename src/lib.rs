@@ -27,9 +27,9 @@ use crate::models::NaturalModelTrait;
 use derive_builder::Builder;
 use models::AudioHandler;
 use rodio::Sink;
-use tts::Tts;
 use std::{error::Error, path::PathBuf};
 use thiserror::Error as TError;
+use tts::Tts;
 
 #[cfg(feature = "gtts")]
 use crate::models::coqui;
@@ -48,6 +48,7 @@ use crate::models::tts_rs::TtsModel;
 #[builder(setter(into))]
 pub struct NaturalTts {
     pub default_model: Option<Model>,
+    #[builder(default = "None")]
     pub audio_handler: Option<AudioHandler>,
 
     #[cfg(feature = "tts-rs")]
@@ -76,19 +77,19 @@ pub struct NaturalTts {
 }
 
 impl NaturalTts {
-    pub fn get_tts_handler(&mut self) -> Result<&mut Tts, Box<dyn Error>> {
+    pub fn get_tts_handler(&mut self) -> Result<&mut Tts, TtsError> {
         if let Some(tts) = &mut self.tts_model {
             Ok(&mut tts.0)
-        }else{
-            Err(Box::new(TtsError::NotSupported))
+        } else {
+            Err(TtsError::NotLoaded)
         }
     }
-    
-    pub fn get_rodio_sink(&mut self) -> Result<&mut Sink, Box<dyn Error>> {
+
+    pub fn get_rodio_sink(&mut self) -> Result<&mut Sink, TtsError> {
         match &mut self.audio_handler {
             Some(AudioHandler::Sink(x)) => Ok(x),
-            Some(_) => return Err(Box::new(TtsError::NotSupported)),
-            None => return Err(Box::new(TtsError::NotSupported)),
+            Some(_) => return Err(TtsError::NotSupported),
+            _ => return Err(TtsError::NotLoaded),
         }
     }
 
@@ -127,7 +128,9 @@ impl NaturalTts {
                 },
             }?);
 
-            return Ok(())
+            let _ = self.resume();
+
+            return Ok(());
         }
 
         Err(Box::new(TtsError::NoDefaultModel))
@@ -136,7 +139,7 @@ impl NaturalTts {
     pub fn synthesize(
         &mut self,
         message: String,
-        path : &PathBuf
+        path: &PathBuf,
     ) -> Result<models::SynthesizedAudio<f32>, Box<dyn Error>> {
         if let Some(model) = &self.default_model {
             return match model {
@@ -214,11 +217,12 @@ impl NaturalTts {
 
         Err(Box::new(TtsError::NoDefaultModel))
     }
-        
+
     pub fn resume(&mut self) -> Result<(), Box<dyn Error>> {
         match &mut self.audio_handler {
             Some(AudioHandler::Sink(x)) => x.play(),
-            _ => return Err(Box::new(TtsError::NotSupported)),
+            Some(_) => return Err(Box::new(TtsError::NotSupported)),
+            _ => return Err(Box::new(TtsError::NotLoaded)),
         }
 
         Ok(())
@@ -228,10 +232,12 @@ impl NaturalTts {
         match &mut self.audio_handler {
             Some(AudioHandler::Sink(x)) => x.stop(),
             Some(AudioHandler::Tts) => match &mut self.tts_model {
-                Some(x) => {let _ = x.0.stop()?;},
+                Some(x) => {
+                    let _ = x.0.stop()?;
+                }
                 None => return Err(Box::new(TtsError::NotSupported)),
             },
-            _ => return Err(Box::new(TtsError::NotSupported)),
+            _ => return Err(Box::new(TtsError::NotLoaded)),
         }
 
         Ok(())

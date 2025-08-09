@@ -21,13 +21,13 @@ impl Default for TtsModel {
 
 impl NaturalModelTrait for TtsModel {
     type SynthesizeType = f32;
-    fn save(&mut self, message: String, path: &PathBuf) -> Result<(), Box<dyn Error>> {
+    fn save(&mut self, _message: String, _path: &PathBuf) -> Result<(), Box<dyn Error>> {
         Err(TtsError::NotSupported.into())
     }
 
-    fn start(&mut self, message: String, path : &PathBuf) -> Result<AudioHandler, Box<dyn Error>> {
+    fn start(&mut self, message: String, _path: &PathBuf) -> Result<AudioHandler, Box<dyn Error>> {
         let is_speaking = self.0.is_speaking();
-        
+
         if let Ok(speaking) = is_speaking {
             if speaking {
                 return Ok(AudioHandler::Tts);
@@ -40,8 +40,8 @@ impl NaturalModelTrait for TtsModel {
 
     fn synthesize(
         &mut self,
-        message: String,
-        path : &PathBuf
+        _message: String,
+        _path: &PathBuf,
     ) -> Result<SynthesizedAudio<Self::SynthesizeType>, Box<dyn Error>> {
         Err(TtsError::NotSupported.into())
     }

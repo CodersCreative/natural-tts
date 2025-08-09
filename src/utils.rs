@@ -19,10 +19,12 @@
 // SOFTWARE.
 use crate::models::{Spec::Wav, SynthesizedAudio};
 use hound::{Sample, WavReader};
-use rodio::{buffer::SamplesBuffer, cpal::FromSample, Decoder, OutputStream,  Sink};
-use std::{error::Error, io::Write, path::{Path, PathBuf}};
+use rodio::{buffer::SamplesBuffer, cpal::FromSample, Decoder, OutputStream, Sink};
+use std::{error::Error, io::Write, path::PathBuf};
 
-pub fn read_wav_file<T : Sample + Send + rodio::Sample>(path: &PathBuf) -> Result<SynthesizedAudio<T>, Box<dyn Error>> {
+pub fn read_wav_file<T: Sample + Send + rodio::Sample>(
+    path: &PathBuf,
+) -> Result<SynthesizedAudio<T>, Box<dyn Error>> {
     let mut reader = WavReader::open(path)?;
     let mut samples: Vec<T> = Vec::new();
 
@@ -39,6 +41,7 @@ pub fn read_wav_file<T : Sample + Send + rodio::Sample>(path: &PathBuf) -> Resul
     ))
 }
 
+#[allow(dead_code)]
 pub fn get_path(path: String) -> String {
     let mut new_path = env!("CARGO_MANIFEST_DIR").to_string();
     new_path.push_str(&format!("/src/{}", path));

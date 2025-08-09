@@ -12,31 +12,30 @@ pub mod parler;
 pub mod tts_rs;
 
 use crate::{
-    utils::{get_path, play_wav_file, read_wav_file},
+    utils::{play_wav_file, read_wav_file},
     TtsError,
 };
 use hound::WavSpec;
 #[cfg(feature = "msedge")]
 use msedge_tts::tts::AudioMetadata;
 use rodio::{Sample, Sink};
-use tts::Tts;
-use std::{error::Error, fs::File, path::{Path, PathBuf}};
+use std::{error::Error, fs::File, path::PathBuf};
 
 pub enum AudioHandler {
     Sink(Sink),
     Tts,
 }
 
-impl Clone for AudioHandler{
+impl Clone for AudioHandler {
     fn clone(&self) -> Self {
-        match self{
-            Self::Sink(x) => panic!("Sink cant be cloned"),
+        match self {
+            Self::Sink(_) => panic!("Sink cant be cloned"),
             Self::Tts => Self::Tts,
         }
     }
 }
 
-impl From<Sink> for AudioHandler{
+impl From<Sink> for AudioHandler {
     fn from(value: Sink) -> Self {
         Self::Sink(value)
     }
@@ -45,8 +44,8 @@ impl From<Sink> for AudioHandler{
 pub trait NaturalModelTrait {
     type SynthesizeType: Sample + Send + hound::Sample;
     fn save(&mut self, message: String, path: &PathBuf) -> Result<(), Box<dyn Error>>;
-    
-    fn start(&mut self, message: String, path : &PathBuf) -> Result<AudioHandler, Box<dyn Error>>{
+
+    fn start(&mut self, message: String, path: &PathBuf) -> Result<AudioHandler, Box<dyn Error>> {
         let _ = self.save(message.clone(), path);
         Ok(AudioHandler::Sink(play_wav_file(&path)?))
     }
@@ -54,8 +53,8 @@ pub trait NaturalModelTrait {
     fn synthesize(
         &mut self,
         message: String,
-        path : &PathBuf,
-    ) -> Result<SynthesizedAudio<Self::SynthesizeType>, Box<dyn Error>>{
+        path: &PathBuf,
+    ) -> Result<SynthesizedAudio<Self::SynthesizeType>, Box<dyn Error>> {
         let _ = self.save(message.clone(), path);
         let rwf = read_wav_file(path)?;
         Ok(rwf)

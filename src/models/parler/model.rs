@@ -275,7 +275,7 @@ impl Decoder {
         encoder_attention_mask: Option<&Tensor>,
         seqlen_offset: usize,
     ) -> Result<Vec<Tensor>> {
-        let (b_sz, num_codebooks, seq_len) = input_ids.dims3()?;
+        let (b_sz, _num_codebooks, seq_len) = input_ids.dims3()?;
         let mut inputs_embeds = Tensor::zeros(
             (b_sz, seq_len, self.hidden_size),
             self.dtype,
