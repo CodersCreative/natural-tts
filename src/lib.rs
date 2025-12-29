@@ -28,7 +28,7 @@ use crate::models::NaturalModelTrait;
 use derive_builder::Builder;
 use models::AudioHandler;
 use rodio::{OutputStream, Sink};
-use std::{error::Error, path::PathBuf, thread, time::Duration};
+use std::{error::Error, path::PathBuf};
 use thiserror::Error as TError;
 
 #[cfg(feature = "tts-rs")]
@@ -110,13 +110,17 @@ impl NaturalTts {
     pub fn sleep_until_end(&self) {
         match &self.audio_handler {
             Some(AudioHandler::Sink { sink, stream: _ }) => sink.sleep_until_end(),
+            #[cfg(feature = "tts-rs")]
             _ => {
+                use std::{thread, time::Duration};
                 if let Some(x) = &self.tts_model {
                     while x.0.is_speaking().unwrap_or_default() {
                         thread::sleep(Duration::from_millis(100));
                     }
                 }
             }
+            #[allow(unreachable_patterns)]
+            _ => {}
         }
     }
 
