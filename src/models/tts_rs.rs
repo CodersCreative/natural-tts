@@ -9,13 +9,13 @@ pub struct TtsModel(pub Tts);
 impl TtsModel {
     pub fn new() -> Result<Self, Box<dyn Error>> {
         let def = Tts::default()?;
-        return Ok(Self(def));
+        Ok(Self(def))
     }
 }
 
 impl Default for TtsModel {
     fn default() -> Self {
-        return Self::new().unwrap();
+        Self::new().unwrap()
     }
 }
 

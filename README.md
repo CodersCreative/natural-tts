@@ -35,6 +35,14 @@ fn main() -> Result<(), Box<dyn Error>>{
 
     // Use the pre-included function to say a message using the default_model.
     let _ = natural.say_auto("Hello, World!".to_string())?;
+
+    // Get the rodio sink from natural tts
+    let sink = natural.get_rodio_sink()?.0;
+
+    // Play the audio until it finishes
+    sink.sleep_until_end();
+
+    Ok(())
 }
 
 ```
@@ -54,6 +62,9 @@ fn main() -> Result<(), Box<dyn Error>>{
 
     // Use the pre-included function to say a message using the default_model.
     let _ = natural.say_auto("Hello, World!".to_string())?;
+
+    // Play the audio until it finishes
+    natural.sleep_until_end();
     Ok(())
 }
 
@@ -74,6 +85,10 @@ fn main() -> Result<(), Box<dyn Error>>{
 
     // Use the pre-included function to say a message using the default_model.
     let _ = natural.say_auto("Hello, World!".to_string())?;
+
+    // Play the audio until it finishes
+    natural.sleep_until_end();
+    Ok(())    
 }
 
 ```
@@ -93,6 +108,9 @@ fn main() -> Result<(), Box<dyn Error>>{
 
     // Use the pre-included function to say a message using the default_model.
     let _ = natural.say_auto("Hello, World!".to_string())?;
+
+    // Play the audio until it finishes
+    natural.sleep_until_end();
     Ok(())
 }
 
@@ -105,7 +123,6 @@ use std::error::Error;
 use natural_tts::{*, models::msedge::MSEdgeModel};
 
 fn main() -> Result<(), Box<dyn Error>>{
-
     // Create the NaturalTts struct using the builder pattern.
     let mut natural = NaturalTtsBuilder::default()
         .msedge_model(MSEdgeModel::default())
@@ -114,7 +131,10 @@ fn main() -> Result<(), Box<dyn Error>>{
 
     // Use the pre-included function to say a message using the default_model.
     let _ = natural.say_auto("Hello, World!".to_string())?;
-    Ok(())
+
+    // Play the audio until it finishes
+    natural.sleep_until_end();
+    Ok(())    
 }
 
 ```
@@ -135,7 +155,10 @@ fn main() -> Result<(), Box<dyn Error>>{
 
     // Use the pre-included function to say a message using the default_model.
     let _ = natural.say_auto("Hello, World!".to_string())?;
-    Ok(())
+
+    // Play the audio until it finishes
+    natural.sleep_until_end();
+    Ok(())    
 }
 
 ```
@@ -157,6 +180,9 @@ fn main() -> Result<(), Box<dyn Error>>{
 
     // Use the pre-included function to say a message using the default_model.
     let _ = natural.say_auto("Hello, World!".to_string())?;
+
+    // Play the audio until it finishes
+    natural.sleep_until_end();
     Ok(())
 }
 

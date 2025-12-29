@@ -51,9 +51,10 @@ impl CoquiModel {
 
     pub fn generate(&self, message: String, path: &PathBuf) -> Result<(), Box<dyn Error>> {
         return Python::with_gil(|py| -> Result<(), Box<dyn Error>> {
-            self.model
-                .getattr(py, "tts_to_file")?
-                .call1(py, (("text", message), ("file_path", path.to_str().unwrap())))?;
+            self.model.getattr(py, "tts_to_file")?.call1(
+                py,
+                (("text", message), ("file_path", path.to_str().unwrap())),
+            )?;
             Ok(())
         });
     }

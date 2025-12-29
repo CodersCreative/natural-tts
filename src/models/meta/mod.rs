@@ -15,7 +15,10 @@ use candle_transformers::{
 use derive_builder::Builder;
 use hf_hub::api::sync::Api;
 use hound::WavSpec;
-use rand::{distributions::Distribution, SeedableRng};
+use rand::{
+    distr::{weighted::WeightedIndex, Distribution},
+    SeedableRng,
+};
 use std::{error::Error, io::Write, path::PathBuf};
 use utils::*;
 
@@ -25,12 +28,10 @@ const MODEL_NAME: &str = "lmz/candle-metavoice";
 pub struct MetaModelOptions {
     #[builder(default = "false")]
     pub cpu: bool,
-    #[builder(default = "MODEL_NAME.to_string()")]
-    model_name: String,
+    #[builder(default = "MetaModelPath::from(MODEL_NAME.to_string())")]
+    pub model_path: MetaModelPath,
     #[builder(default = "false")]
     pub tracing: bool,
-    #[builder(default = "None")]
-    pub spk_emb: Option<String>,
     #[builder(default = "1024")]
     pub encodec_ntokens: u32,
     #[builder(default = "299792458")]
@@ -43,6 +44,26 @@ pub struct MetaModelOptions {
     pub temperature: f64,
 }
 
+impl From<String> for MetaModelPath {
+    fn from(value: String) -> Self {
+        Self::HF { model_id: value }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum MetaModelPath {
+    HF {
+        model_id: String,
+    },
+    Local {
+        encodec_weights_path: Option<PathBuf>,
+        first_stage_meta_path: PathBuf,
+        first_stage_weights_path: PathBuf,
+        second_stage_weights_path: PathBuf,
+        spk_emb_path: PathBuf,
+    },
+}
+
 #[derive(Clone)]
 pub struct MetaModel {
     pub first_stage_model: transformer::Model,
@@ -51,12 +72,11 @@ pub struct MetaModel {
     pub dtype: DType,
     pub encodec_weights: PathBuf,
     pub second_stage_weights: PathBuf,
-    pub repo_path: String,
+    pub model_path: MetaModelPath,
     pub seed: u64,
     pub guidance_scale: f64,
     pub temperature: f64,
     pub max_tokens: u64,
-    pub spk_emb: Option<String>,
     pub encodec_ntokens: u32,
 }
 
@@ -76,25 +96,47 @@ impl MetaModel {
         let device = device(options.cpu)?;
         let api = Api::new()?;
 
-        let repo = api.model(options.model_name.clone());
+        let (first_stage_meta, first_stage_weights, second_stage_weights) =
+            match &options.model_path {
+                MetaModelPath::HF { model_id } => {
+                    let repo = api.model(model_id.to_string());
+                    (
+                        repo.get("first_stage.meta.json")?,
+                        repo.get("first_stage.safetensors")?,
+                        repo.get("second_stage.safetensors")?,
+                    )
+                }
+                MetaModelPath::Local {
+                    first_stage_meta_path,
+                    first_stage_weights_path,
+                    second_stage_weights_path,
+                    ..
+                } => (
+                    first_stage_meta_path.clone(),
+                    first_stage_weights_path.clone(),
+                    second_stage_weights_path.clone(),
+                ),
+            };
 
-        let first_stage_meta = repo.get("first_stage.meta.json")?;
+        let encodec_weights = match &options.model_path {
+            MetaModelPath::Local {
+                encodec_weights_path: Some(path),
+                ..
+            } => path.clone(),
+            _ => Api::new()?
+                .model("sanchit-gandhi/encodec_24khz".to_string())
+                .get("model.safetensors")?,
+        };
+
         let first_stage_meta: serde_json::Value =
             serde_json::from_reader(&std::fs::File::open(first_stage_meta)?)?;
 
         let dtype = DType::F32;
         let first_stage_config = transformer::Config::cfg1b_v0_1();
 
-        let first_stage_weights = repo.get("first_stage.safetensors")?;
         let first_stage_vb =
             unsafe { VarBuilder::from_mmaped_safetensors(&[first_stage_weights], dtype, &device)? };
         let first_stage_model = transformer::Model::new(&first_stage_config, first_stage_vb)?;
-
-        let second_stage_weights = repo.get("second_stage.safetensors")?;
-
-        let encodec_weights = Api::new()?
-            .model("sanchit-gandhi/encodec_24khz".to_string())
-            .get("model.safetensors")?;
 
         return Ok(Self {
             first_stage_model,
@@ -103,12 +145,11 @@ impl MetaModel {
             dtype,
             encodec_weights,
             second_stage_weights,
-            repo_path: options.model_name,
+            model_path: options.model_path,
             seed: options.seed,
             guidance_scale: options.guidance_scale,
             temperature: options.temperature,
             max_tokens: options.max_tokens,
-            spk_emb: options.spk_emb,
             encodec_ntokens: options.encodec_ntokens,
         });
     }
@@ -144,12 +185,11 @@ impl MetaModel {
         let prompt_tokens = fs_tokenizer.encode(&prompt)?;
         let mut tokens = prompt_tokens.clone();
 
-        let api = Api::new()?;
-        let repo = api.model(self.repo_path.clone());
-
-        let spk_emb_file = match &self.spk_emb {
-            Some(w) => std::path::PathBuf::from(w),
-            None => repo.get("spk_emb.safetensors")?,
+        let spk_emb_file = match &self.model_path {
+            MetaModelPath::HF { model_id } => Api::new()?
+                .model(model_id.to_string())
+                .get("spk_emb.safetensors")?,
+            MetaModelPath::Local { spk_emb_path, .. } => spk_emb_path.clone(),
         };
 
         let spk_emb = candle_core::safetensors::load(&spk_emb_file, &candle_core::Device::Cpu)?;
@@ -171,10 +211,7 @@ impl MetaModel {
             let logits =
                 self.first_stage_model
                     .forward(&input, &spk_emb, tokens.len() - context_size)?;
-            //let logits0 = logits.i((0, 0))?;
-            //let logits1 = logits.i((1, 0))?;
             let logits = logits.i((0, logits.dim(1)? - 1))?;
-            //let logits = ((logits0 * self.guidance_scale)? + logits1 * (1. - self.guidance_scale))?;
             let logits = logits.to_dtype(self.dtype)?;
             let next_token = match logits_processor.sample(&logits) {
                 Ok(x) => x,
@@ -223,7 +260,7 @@ impl MetaModel {
                 let logits = logits.i(step)?.to_dtype(DType::F32)?;
                 let logits = &(&logits / 1.0)?;
                 let prs = candle_nn::ops::softmax_last_dim(logits)?.to_vec1::<f32>()?;
-                let distr = rand::distributions::WeightedIndex::new(prs.as_slice())?;
+                let distr = WeightedIndex::new(prs.as_slice())?;
                 let sample = distr.sample(&mut rng) as u32;
                 codes_.push(sample)
             }
@@ -233,7 +270,6 @@ impl MetaModel {
         let codes = Tensor::new(codes, &self.device)?.unsqueeze(0)?;
         let codes = Tensor::cat(&[in_x, codes], 1)?;
         let tilted_encodec = adapters::TiltedEncodec::new(self.encodec_ntokens);
-        //let tilted_encodec = adapters::TiltedEncodec::new(512);
         let codes = codes.i(0)?.to_vec2::<u32>()?;
         let (_, audio_ids) = tilted_encodec.decode(&codes);
         let audio_ids = Tensor::new(audio_ids, &encodec_device)

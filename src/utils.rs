@@ -19,10 +19,14 @@
 // SOFTWARE.
 use crate::models::{Spec::Wav, SynthesizedAudio};
 use hound::{Sample, WavReader};
-use rodio::{buffer::SamplesBuffer, cpal::FromSample, Decoder, OutputStream, Sink};
-use std::{error::Error, io::Write, path::PathBuf};
+use rodio::{buffer::SamplesBuffer, OutputStream, Sink};
+use std::{
+    error::Error,
+    io::{BufReader, Write},
+    path::PathBuf,
+};
 
-pub fn read_wav_file<T: Sample + Send + rodio::Sample>(
+pub fn read_wav_file<T: Sample + Send + rodio::cpal::Sample>(
     path: &PathBuf,
 ) -> Result<SynthesizedAudio<T>, Box<dyn Error>> {
     let mut reader = WavReader::open(path)?;
@@ -48,30 +52,34 @@ pub fn get_path(path: String) -> String {
     return new_path;
 }
 
-pub fn play_audio<T>(data: &[T], rate: u32) -> Result<Sink, Box<dyn Error>>
+#[allow(dead_code)]
+pub fn play_audio<T>(data: Vec<T>, rate: u32) -> Result<(Sink, OutputStream), Box<dyn Error>>
 where
-    T: rodio::Sample + Send + 'static,
-    f32: FromSample<T>,
+    T: Send + 'static,
+    f32: From<T>,
 {
-    let (_stream, handle) = rodio::OutputStream::try_default().unwrap();
-    let source = SamplesBuffer::new(1, rate, data);
-    let sink = rodio::Sink::try_new(&handle).unwrap();
+    let stream_handle = rodio::OutputStreamBuilder::open_default_stream()?;
+    let sink = rodio::Sink::connect_new(stream_handle.mixer());
 
+    let source = SamplesBuffer::new(
+        1,
+        rate,
+        data.into_iter().map(|x| f32::from(x)).collect::<Vec<f32>>(),
+    );
     sink.append(source);
 
-    Ok(sink)
+    Ok((sink, stream_handle))
 }
 
-pub fn play_wav_file(path: &PathBuf) -> Result<Sink, Box<dyn Error>> {
+pub fn play_wav_file(path: &PathBuf) -> Result<(Sink, OutputStream), Box<dyn Error>> {
     let file = std::fs::File::open(path)?;
-    let decoder = Decoder::new(file)?;
-    let (_stream, stream_handle) = OutputStream::try_default()?;
-    let sink = Sink::try_new(&stream_handle)?;
-
-    sink.append(decoder);
-    Ok(sink)
+    let stream_handle = rodio::OutputStreamBuilder::open_default_stream()?;
+    let mixer = stream_handle.mixer();
+    let sink = rodio::play(mixer, BufReader::new(file))?;
+    Ok((sink, stream_handle))
 }
 
+#[allow(dead_code)]
 pub fn save_wav(data: &[f32], filename: &PathBuf, sample_rate: u32) -> Result<(), std::io::Error> {
     let mut file = std::fs::File::create(filename)?;
 

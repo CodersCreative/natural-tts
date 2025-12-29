@@ -17,18 +17,45 @@ const MODEL_NAME: &str = "parler-tts/parler-tts-mini-v1";
 #[builder(setter(into))]
 pub struct ParlerModelOptions {
     #[builder(default = "false")]
-    cpu: bool,
-    description: String,
+    pub cpu: bool,
+    pub description: String,
     #[builder(default = "false")]
-    tracing: bool,
+    pub tracing: bool,
     #[builder(default = "1.0")]
-    temperature: f64,
+    pub temperature: f64,
     #[builder(default = "None")]
-    top_p: Option<f64>,
+    pub top_p: Option<f64>,
     #[builder(default = "299792458")]
-    seed: u64,
-    #[builder(default = "MODEL_NAME.to_string()")]
-    model_name: String,
+    pub seed: u64,
+    #[builder(default = "Default::default()")]
+    pub model_path: ParlerModelPath,
+}
+
+impl From<String> for ParlerModelPath {
+    fn from(value: String) -> Self {
+        Self::HF {
+            model_id: value,
+            revision: Some(String::from("main")),
+        }
+    }
+}
+#[derive(Clone)]
+pub enum ParlerModelPath {
+    HF {
+        model_id: String,
+        revision: Option<String>,
+    },
+    Local {
+        model_file_paths: Vec<PathBuf>,
+        tokenizers_path: PathBuf,
+        config_path: PathBuf,
+    },
+}
+
+impl Default for ParlerModelPath {
+    fn default() -> Self {
+        ParlerModelPath::from(MODEL_NAME.to_string())
+    }
 }
 
 #[derive(Clone)]
@@ -55,31 +82,36 @@ impl ParlerModel {
         } else {
             None
         };
-
-        let api = Api::new()?;
         let device = device(options.cpu)?;
 
-        let revision = "main".to_string();
+        let (config, model_files, tokenizer) = match options.model_path {
+            ParlerModelPath::HF { model_id, revision } => {
+                let repo = Api::new()?.repo(hf_hub::Repo::with_revision(
+                    model_id.to_string(),
+                    hf_hub::RepoType::Model,
+                    revision.unwrap_or(String::from("main")),
+                ));
 
-        let repo = api.repo(hf_hub::Repo::with_revision(
-            options.model_name,
-            hf_hub::RepoType::Model,
-            revision.clone(),
-        ));
-
-        let config = repo.get("config.json")?;
-
-        let model_files = match repo.get("model.safetensors") {
-            Ok(x) => vec![x],
-            Err(_) => hub_load_safetensors(&repo, "model.safetensors.index.json")?,
+                (
+                    repo.get("config.json")?,
+                    match repo.get("model.safetensors") {
+                        Ok(x) => vec![x],
+                        Err(_) => hub_load_safetensors(&repo, "model.safetensors.index.json")?,
+                    },
+                    repo.get("tokenizer.json")?,
+                )
+            }
+            ParlerModelPath::Local {
+                model_file_paths,
+                tokenizers_path,
+                config_path,
+            } => (config_path, model_file_paths, tokenizers_path),
         };
 
         let vb = unsafe { VarBuilder::from_mmaped_safetensors(&model_files, DType::F32, &device)? };
 
         let config: Config = serde_json::from_reader(std::fs::File::open(config)?)?;
         let model = Model::new(&config, vb)?;
-
-        let tokenizer = repo.get("tokenizer.json")?;
 
         let tokenizer = Tokenizer::from_file(tokenizer).unwrap();
 
@@ -151,7 +183,7 @@ impl Default for ParlerModel {
         let model = "parler-tts/parler-tts-mini-expresso".to_string();
         return Self::new(
             ParlerModelOptionsBuilder::default()
-                .model_name(model)
+                .model_path(ParlerModelPath::from(model))
                 .description(desc)
                 .build()
                 .unwrap(),

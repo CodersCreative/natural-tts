@@ -17,6 +17,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
+pub mod error;
 pub mod models;
 mod utils;
 
@@ -26,12 +27,14 @@ mod test;
 use crate::models::NaturalModelTrait;
 use derive_builder::Builder;
 use models::AudioHandler;
-use rodio::Sink;
-use std::{error::Error, path::PathBuf};
+use rodio::{OutputStream, Sink};
+use std::{error::Error, path::PathBuf, thread, time::Duration};
 use thiserror::Error as TError;
+
+#[cfg(feature = "tts-rs")]
 use tts::Tts;
 
-#[cfg(feature = "gtts")]
+#[cfg(feature = "coqui")]
 use crate::models::coqui;
 #[cfg(feature = "gtts")]
 use crate::models::gtts;
@@ -77,6 +80,7 @@ pub struct NaturalTts {
 }
 
 impl NaturalTts {
+    #[cfg(feature = "tts-rs")]
     pub fn get_tts_handler(&mut self) -> Result<&mut Tts, TtsError> {
         if let Some(tts) = &mut self.tts_model {
             Ok(&mut tts.0)
@@ -85,11 +89,34 @@ impl NaturalTts {
         }
     }
 
-    pub fn get_rodio_sink(&mut self) -> Result<&mut Sink, TtsError> {
+    pub fn get_rodio_sink_mut(&mut self) -> Result<(&mut Sink, &mut OutputStream), TtsError> {
         match &mut self.audio_handler {
-            Some(AudioHandler::Sink(x)) => Ok(x),
-            Some(_) => return Err(TtsError::NotSupported),
-            _ => return Err(TtsError::NotLoaded),
+            Some(AudioHandler::Sink { sink, stream }) => Ok((sink, stream)),
+            #[cfg(feature = "tts-rs")]
+            Some(_) => Err(TtsError::NotSupported),
+            _ => Err(TtsError::NotLoaded),
+        }
+    }
+
+    pub fn get_rodio_sink(&self) -> Result<(&Sink, &OutputStream), TtsError> {
+        match &self.audio_handler {
+            Some(AudioHandler::Sink { sink, stream }) => Ok((sink, stream)),
+            #[cfg(feature = "tts-rs")]
+            Some(_) => Err(TtsError::NotSupported),
+            _ => Err(TtsError::NotLoaded),
+        }
+    }
+
+    pub fn sleep_until_end(&self) {
+        match &self.audio_handler {
+            Some(AudioHandler::Sink { sink, stream: _ }) => sink.sleep_until_end(),
+            _ => {
+                if let Some(x) = &self.tts_model {
+                    while x.0.is_speaking().unwrap_or_default() {
+                        thread::sleep(Duration::from_millis(100));
+                    }
+                }
+            }
         }
     }
 
@@ -218,7 +245,8 @@ impl NaturalTts {
 
     pub fn resume(&mut self) -> Result<(), Box<dyn Error>> {
         match &mut self.audio_handler {
-            Some(AudioHandler::Sink(x)) => x.play(),
+            Some(AudioHandler::Sink { sink, stream: _ }) => sink.play(),
+            #[cfg(feature = "tts-rs")]
             Some(_) => return Err(Box::new(TtsError::NotSupported)),
             _ => return Err(Box::new(TtsError::NotLoaded)),
         }
@@ -228,7 +256,8 @@ impl NaturalTts {
 
     pub fn stop(&mut self) -> Result<(), Box<dyn Error>> {
         match &mut self.audio_handler {
-            Some(AudioHandler::Sink(x)) => x.stop(),
+            Some(AudioHandler::Sink { sink, stream: _ }) => sink.stop(),
+            #[cfg(feature = "tts-rs")]
             Some(AudioHandler::Tts) => match &mut self.tts_model {
                 Some(x) => {
                     let _ = x.0.stop()?;

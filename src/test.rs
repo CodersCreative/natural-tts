@@ -1,5 +1,5 @@
 #[cfg(test)]
-#[cfg(feature = "gtts")]
+#[cfg(feature = "coqui")]
 use crate::models::coqui::CoquiModel;
 #[cfg(feature = "gtts")]
 use crate::models::gtts::GttsModel;
@@ -24,6 +24,7 @@ fn gtts_test() {
         .build()
         .unwrap();
     let _ = natural.start("Hello, World!".to_string(), &PathBuf::from("output.wav"));
+    natural.sleep_until_end();
 }
 
 #[cfg(feature = "parler")]
@@ -35,6 +36,7 @@ fn parler_test() {
         .build()
         .unwrap();
     let _ = natural.start("Hello, World!".to_string(), &PathBuf::from("output.wav"));
+    natural.sleep_until_end();
 }
 
 #[cfg(feature = "msedge")]
@@ -46,6 +48,7 @@ fn msedge_test() {
         .build()
         .unwrap();
     let _ = natural.start("Hello, World!".to_string(), &PathBuf::from("output.wav"));
+    natural.sleep_until_end();
 }
 
 #[cfg(feature = "tts-rs")]
@@ -57,6 +60,7 @@ fn tts_test() {
         .build()
         .unwrap();
     let _ = natural.start("Hello, World!".to_string(), &PathBuf::from("output.wav"));
+    natural.sleep_until_end();
 }
 
 #[cfg(feature = "meta")]
@@ -68,6 +72,7 @@ fn meta_test() {
         .build()
         .unwrap();
     let _ = natural.start("Hello, World!".to_string(), &PathBuf::from("output.wav"));
+    natural.sleep_until_end();
 }
 
 #[cfg(feature = "coqui")]
@@ -79,4 +84,5 @@ fn coqui_test() {
         .build()
         .unwrap();
     let _ = natural.start("Hello, World!".to_string(), &PathBuf::from("output.wav"));
+    natural.sleep_until_end();
 }

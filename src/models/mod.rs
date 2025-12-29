@@ -18,26 +18,34 @@ use crate::{
 use hound::WavSpec;
 #[cfg(feature = "msedge")]
 use msedge_tts::tts::AudioMetadata;
-use rodio::{Sample, Sink};
+use rodio::{cpal::Sample, OutputStream, Sink};
 use std::{error::Error, fs::File, path::PathBuf};
 
 pub enum AudioHandler {
-    Sink(Sink),
+    Sink {
+        sink: Sink,
+        stream: OutputStream,
+    },
+    #[cfg(feature = "tts-rs")]
     Tts,
 }
 
 impl Clone for AudioHandler {
     fn clone(&self) -> Self {
         match self {
-            Self::Sink(_) => panic!("Sink cant be cloned"),
+            Self::Sink { .. } => panic!("Sink cant be cloned"),
+            #[cfg(feature = "tts-rs")]
             Self::Tts => Self::Tts,
         }
     }
 }
 
-impl From<Sink> for AudioHandler {
-    fn from(value: Sink) -> Self {
-        Self::Sink(value)
+impl From<(Sink, OutputStream)> for AudioHandler {
+    fn from(value: (Sink, OutputStream)) -> Self {
+        Self::Sink {
+            sink: value.0,
+            stream: value.1,
+        }
     }
 }
 
@@ -47,7 +55,7 @@ pub trait NaturalModelTrait {
 
     fn start(&mut self, message: String, path: &PathBuf) -> Result<AudioHandler, Box<dyn Error>> {
         let _ = self.save(message.clone(), path);
-        Ok(AudioHandler::Sink(play_wav_file(&path)?))
+        Ok(AudioHandler::from(play_wav_file(path)?))
     }
 
     fn synthesize(
@@ -68,13 +76,13 @@ pub enum Spec {
     Unknown,
 }
 
-pub struct SynthesizedAudio<T: rodio::Sample> {
+pub struct SynthesizedAudio<T: Sample> {
     pub spec: Spec,
     pub data: Vec<T>,
     pub duration: Option<i32>,
 }
 
-impl<T: rodio::Sample> SynthesizedAudio<T> {
+impl<T: Sample> SynthesizedAudio<T> {
     pub fn new(data: Vec<T>, spec: Spec, duration: Option<i32>) -> Self {
         return Self {
             data,

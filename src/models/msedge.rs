@@ -14,20 +14,20 @@ pub struct MSEdgeModel {
 
 impl MSEdgeModel {
     pub fn new_from_voice(voice: Voice) -> Self {
-        return Self {
+        Self {
             config: SpeechConfig::from(&voice),
-        };
+        }
     }
 
     pub fn new(config: SpeechConfig) -> Self {
-        return Self { config };
+        Self { config }
     }
 }
 
 impl Default for MSEdgeModel {
     fn default() -> Self {
         let voice = get_voices_list().unwrap();
-        return Self::new(SpeechConfig::from(voice.first().unwrap()));
+        Self::new(SpeechConfig::from(voice.first().unwrap()))
     }
 }
 
@@ -45,9 +45,9 @@ impl NaturalModelTrait for MSEdgeModel {
             x => x,
         };
 
-        Ok(AudioHandler::Sink(match synthesized.spec {
-            Spec::Wav(x) => play_audio(&synthesized.data, x.sample_rate),
-            _ => play_audio(&synthesized.data, rate as u32),
+        Ok(AudioHandler::from(match synthesized.spec {
+            Spec::Wav(x) => play_audio(synthesized.data, x.sample_rate),
+            _ => play_audio(synthesized.data, rate as u32),
         }?))
     }
 
@@ -70,11 +70,11 @@ impl NaturalModelTrait for MSEdgeModel {
     ) -> Result<super::SynthesizedAudio<Self::SynthesizeType>, Box<dyn std::error::Error>> {
         let mut tts = connect().unwrap();
         let audio = tts.synthesize(message.as_str(), &self.config.as_msedge())?;
-        return Ok(SynthesizedAudio::new(
-            audio.audio_bytes.iter().map(|x| x.clone() as f32).collect(),
+        Ok(SynthesizedAudio::new(
+            audio.audio_bytes.iter().map(|x| *x as f32).collect(),
             Spec::Synthesized(audio.audio_format, audio.audio_metadata),
             None,
-        ));
+        ))
     }
 }
 
@@ -89,31 +89,31 @@ pub struct SpeechConfig {
 
 impl SpeechConfig {
     pub fn as_msedge(&self) -> OtherConfig {
-        return OtherConfig {
+        OtherConfig {
             voice_name: self.voice_name.clone(),
             audio_format: self.audio_format.clone(),
             pitch: self.pitch,
             rate: self.rate,
             volume: self.volume,
-        };
+        }
     }
 }
 
 impl From<&msedge_tts::tts::SpeechConfig> for SpeechConfig {
     fn from(config: &msedge_tts::tts::SpeechConfig) -> Self {
-        return Self {
+        Self {
             voice_name: config.voice_name.clone(),
             audio_format: config.audio_format.clone(),
             pitch: config.pitch,
             rate: config.rate,
             volume: config.volume,
-        };
+        }
     }
 }
 
 impl From<&msedge_tts::voice::Voice> for SpeechConfig {
     fn from(voice: &msedge_tts::voice::Voice) -> Self {
         let mscfg = OtherConfig::from(voice);
-        return Self::from(&mscfg);
+        Self::from(&mscfg)
     }
 }
