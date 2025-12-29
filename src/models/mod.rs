@@ -19,7 +19,7 @@ use hound::WavSpec;
 #[cfg(feature = "msedge")]
 use msedge_tts::tts::AudioMetadata;
 use rodio::{cpal::Sample, OutputStream, Sink};
-use std::{error::Error, fs::File, path::PathBuf};
+use std::{fs::File, path::PathBuf};
 
 pub enum AudioHandler {
     Sink {
@@ -51,9 +51,9 @@ impl From<(Sink, OutputStream)> for AudioHandler {
 
 pub trait NaturalModelTrait {
     type SynthesizeType: Sample + Send + hound::Sample;
-    fn save(&mut self, message: String, path: &PathBuf) -> Result<(), Box<dyn Error>>;
+    fn save(&mut self, message: String, path: &PathBuf) -> Result<(), TtsError>;
 
-    fn start(&mut self, message: String, path: &PathBuf) -> Result<AudioHandler, Box<dyn Error>> {
+    fn start(&mut self, message: String, path: &PathBuf) -> Result<AudioHandler, TtsError> {
         let _ = self.save(message.clone(), path);
         Ok(AudioHandler::from(play_wav_file(path)?))
     }
@@ -62,7 +62,7 @@ pub trait NaturalModelTrait {
         &mut self,
         message: String,
         path: &PathBuf,
-    ) -> Result<SynthesizedAudio<Self::SynthesizeType>, Box<dyn Error>> {
+    ) -> Result<SynthesizedAudio<Self::SynthesizeType>, TtsError> {
         let _ = self.save(message.clone(), path);
         let rwf = read_wav_file(path)?;
         Ok(rwf)
@@ -92,10 +92,10 @@ impl<T: Sample> SynthesizedAudio<T> {
     }
 }
 
-pub fn did_save(path: &PathBuf) -> Result<(), Box<dyn Error>> {
+pub fn did_save(path: &PathBuf) -> Result<(), TtsError> {
     let file = File::open(path);
     match file {
         Ok(_) => Ok(()),
-        Err(_) => Err(Box::new(TtsError::NotSaved)),
+        Err(_) => Err(TtsError::NotSaved),
     }
 }

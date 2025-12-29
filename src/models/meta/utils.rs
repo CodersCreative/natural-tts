@@ -4,7 +4,6 @@ use candle_core::utils::{cuda_is_available, metal_is_available};
 use candle_core::{Device, Tensor};
 use candle_transformers::models::metavoice::{tokenizers, transformer};
 use candle_transformers::models::quantized_metavoice::transformer as qtransformer;
-use std::error::Error;
 use std::io::Write;
 use std::path::PathBuf;
 
@@ -14,9 +13,7 @@ pub enum Transformer {
     Quantized(qtransformer::Model),
 }
 
-pub fn get_fs_tokenizer(
-    first_stage_meta: serde_json::Value,
-) -> Result<tokenizers::BPE, Box<dyn Error>> {
+pub fn get_fs_tokenizer(first_stage_meta: serde_json::Value) -> Result<tokenizers::BPE, TtsError> {
     let first_stage_tokenizer = match first_stage_meta.as_object() {
         None => return Err(TtsError::Json.into()),
         Some(j) => match j.get("tokenizer") {
@@ -27,7 +24,7 @@ pub fn get_fs_tokenizer(
 
     Ok(tokenizers::BPE::from_json(first_stage_tokenizer, 512)?)
 }
-pub fn device(cpu: bool) -> Result<Device, Box<dyn Error>> {
+pub fn device(cpu: bool) -> Result<Device, TtsError> {
     if cpu {
         Ok(Device::Cpu)
     } else if cuda_is_available() {
@@ -42,14 +39,18 @@ pub fn device(cpu: bool) -> Result<Device, Box<dyn Error>> {
 pub fn hub_load_safetensors(
     repo: &hf_hub::api::sync::ApiRepo,
     json_file: &str,
-) -> Result<Vec<std::path::PathBuf>, Box<dyn Error>> {
+) -> Result<Vec<std::path::PathBuf>, TtsError> {
     let json_file = repo.get(json_file).unwrap();
     let json_file = std::fs::File::open(json_file)?;
     let json: serde_json::Value = serde_json::from_reader(&json_file).unwrap();
     let weight_map = match json.get("weight_map") {
-        None => return Err("no weight map in {json_file:?}".into()),
+        None => return Err("no weight map in {json_file:?}".to_string().into()),
         Some(serde_json::Value::Object(map)) => map,
-        Some(_) => return Err("weight map in {json_file:?} is not a map".into()),
+        Some(_) => {
+            return Err("weight map in {json_file:?} is not a map"
+                .to_string()
+                .into())
+        }
     };
     let mut safetensors_files = std::collections::HashSet::new();
     for value in weight_map.values() {
@@ -123,7 +124,7 @@ pub fn normalize_loudness(
     wav: &Tensor,
     sample_rate: u32,
     loudness_compressor: bool,
-) -> Result<candle_core::Tensor, Box<dyn Error>> {
+) -> Result<candle_core::Tensor, TtsError> {
     let energy = wav.sqr()?.mean_all()?.sqrt()?.to_vec0::<f32>()?;
     if energy < 2e-3 {
         return Ok(wav.clone());

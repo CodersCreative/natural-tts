@@ -1,7 +1,10 @@
 use std::path::PathBuf;
 
 use super::{AudioHandler, NaturalModelTrait, Spec, SynthesizedAudio};
-use crate::utils::{play_audio, save_wav};
+use crate::{
+    error::TtsError,
+    utils::{play_audio, save_wav},
+};
 use msedge_tts::{
     tts::{client::connect, SpeechConfig as OtherConfig},
     voice::{get_voices_list, Voice},
@@ -33,11 +36,7 @@ impl Default for MSEdgeModel {
 
 impl NaturalModelTrait for MSEdgeModel {
     type SynthesizeType = f32;
-    fn start(
-        &mut self,
-        message: String,
-        path: &PathBuf,
-    ) -> Result<AudioHandler, Box<dyn std::error::Error>> {
+    fn start(&mut self, message: String, path: &PathBuf) -> Result<AudioHandler, TtsError> {
         let synthesized = Self::synthesize(self, message, path)?;
 
         let rate = match self.config.rate {
@@ -51,7 +50,7 @@ impl NaturalModelTrait for MSEdgeModel {
         }?))
     }
 
-    fn save(&mut self, message: String, path: &PathBuf) -> Result<(), Box<dyn std::error::Error>> {
+    fn save(&mut self, message: String, path: &PathBuf) -> Result<(), TtsError> {
         let synthesized = Self::synthesize(self, message, path)?;
 
         let rate = match self.config.rate {
@@ -67,7 +66,7 @@ impl NaturalModelTrait for MSEdgeModel {
         &mut self,
         message: String,
         _path: &PathBuf,
-    ) -> Result<super::SynthesizedAudio<Self::SynthesizeType>, Box<dyn std::error::Error>> {
+    ) -> Result<super::SynthesizedAudio<Self::SynthesizeType>, TtsError> {
         let mut tts = connect().unwrap();
         let audio = tts.synthesize(message.as_str(), &self.config.as_msedge())?;
         Ok(SynthesizedAudio::new(

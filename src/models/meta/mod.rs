@@ -19,7 +19,7 @@ use rand::{
     distr::{weighted::WeightedIndex, Distribution},
     SeedableRng,
 };
-use std::{error::Error, io::Write, path::PathBuf};
+use std::{io::Write, path::PathBuf};
 use utils::*;
 
 const MODEL_NAME: &str = "lmz/candle-metavoice";
@@ -30,8 +30,6 @@ pub struct MetaModelOptions {
     pub cpu: bool,
     #[builder(default = "MetaModelPath::from(MODEL_NAME.to_string())")]
     pub model_path: MetaModelPath,
-    #[builder(default = "false")]
-    pub tracing: bool,
     #[builder(default = "1024")]
     pub encodec_ntokens: u32,
     #[builder(default = "299792458")]
@@ -81,18 +79,7 @@ pub struct MetaModel {
 }
 
 impl MetaModel {
-    pub fn new(options: MetaModelOptions) -> Result<Self, Box<dyn Error>> {
-        use tracing_chrome::ChromeLayerBuilder;
-        use tracing_subscriber::prelude::*;
-
-        let _guard = if options.tracing {
-            let (chrome_layer, guard) = ChromeLayerBuilder::new().build();
-            tracing_subscriber::registry().with(chrome_layer).init();
-            Some(guard)
-        } else {
-            None
-        };
-
+    pub fn new(options: MetaModelOptions) -> Result<Self, TtsError> {
         let device = device(options.cpu)?;
         let api = Api::new()?;
 
@@ -154,7 +141,7 @@ impl MetaModel {
         });
     }
 
-    pub fn generate(&mut self, prompt: String) -> Result<SynthesizedAudio<f32>, Box<dyn Error>> {
+    pub fn generate(&mut self, prompt: String) -> Result<SynthesizedAudio<f32>, TtsError> {
         let second_stage_vb = unsafe {
             VarBuilder::from_mmaped_safetensors(
                 &[self.second_stage_weights.clone()],
@@ -304,7 +291,7 @@ impl Default for MetaModel {
 impl NaturalModelTrait for MetaModel {
     type SynthesizeType = f32;
 
-    fn save(&mut self, message: String, path: &PathBuf) -> Result<(), Box<dyn Error>> {
+    fn save(&mut self, message: String, path: &PathBuf) -> Result<(), TtsError> {
         let data = self.synthesize(message, path)?;
         let mut output = std::fs::File::create(&path)?;
         write_pcm_as_wav(&mut output, &data.data, 24_000 as u32)?;
@@ -315,7 +302,7 @@ impl NaturalModelTrait for MetaModel {
         &mut self,
         message: String,
         _path: &PathBuf,
-    ) -> Result<SynthesizedAudio<Self::SynthesizeType>, Box<dyn Error>> {
+    ) -> Result<SynthesizedAudio<Self::SynthesizeType>, TtsError> {
         self.generate(message)
     }
 }

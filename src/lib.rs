@@ -28,8 +28,7 @@ use crate::models::NaturalModelTrait;
 use derive_builder::Builder;
 use models::AudioHandler;
 use rodio::{OutputStream, Sink};
-use std::{error::Error, path::PathBuf};
-use thiserror::Error as TError;
+use std::path::PathBuf;
 
 #[cfg(feature = "tts-rs")]
 use tts::Tts;
@@ -47,6 +46,7 @@ use crate::models::parler;
 #[cfg(feature = "tts-rs")]
 use crate::models::tts_rs::TtsModel;
 
+use crate::error::TtsError;
 #[derive(Builder, Default, Clone)]
 #[builder(setter(into))]
 pub struct NaturalTts {
@@ -124,141 +124,141 @@ impl NaturalTts {
         }
     }
 
-    pub fn start(&mut self, message: String, path: &PathBuf) -> Result<(), Box<dyn Error>> {
+    pub fn start(&mut self, message: String, path: &PathBuf) -> Result<(), TtsError> {
         if let Some(model) = &self.default_model {
             self.audio_handler = Some(match model {
                 #[cfg(feature = "coqui")]
                 Model::Coqui => match &mut self.coqui_model {
-                    Some(x) => Ok(x.start(message, path)?),
-                    None => Err(Box::new(TtsError::NotLoaded)),
+                    Some(x) => x.start(message, path),
+                    None => Err(TtsError::NotLoaded),
                 },
                 #[cfg(feature = "parler")]
                 Model::Parler => match &mut self.parler_model {
-                    Some(x) => Ok(x.start(message, path)?),
-                    None => Err(Box::new(TtsError::NotLoaded)),
+                    Some(x) => x.start(message, path),
+                    None => Err(TtsError::NotLoaded),
                 },
                 #[cfg(feature = "tts-rs")]
                 Model::TTS => match &mut self.tts_model {
-                    Some(x) => Ok(x.start(message, path)?),
-                    None => Err(Box::new(TtsError::NotLoaded)),
+                    Some(x) => x.start(message, path),
+                    None => Err(TtsError::NotLoaded),
                 },
                 #[cfg(feature = "msedge")]
                 Model::MSEdge => match &mut self.msedge_model {
-                    Some(x) => Ok(x.start(message, path)?),
-                    None => Err(Box::new(TtsError::NotLoaded)),
+                    Some(x) => x.start(message, path),
+                    None => Err(TtsError::NotLoaded),
                 },
                 #[cfg(feature = "meta")]
                 Model::Meta => match &mut self.meta_model {
-                    Some(x) => Ok(x.start(message, path)?),
-                    None => Err(Box::new(TtsError::NotLoaded)),
+                    Some(x) => x.start(message, path),
+                    None => Err(TtsError::NotLoaded),
                 },
                 #[cfg(feature = "gtts")]
                 _ => match &mut self.gtts_model {
-                    Some(x) => Ok(x.start(message, path)?),
-                    None => Err(Box::new(TtsError::NotLoaded)),
+                    Some(x) => x.start(message, path),
+                    None => Err(TtsError::NotLoaded),
                 },
             }?);
 
             return Ok(());
         }
 
-        Err(Box::new(TtsError::NoDefaultModel))
+        Err(TtsError::NoDefaultModel)
     }
 
     pub fn synthesize(
         &mut self,
         message: String,
         path: &PathBuf,
-    ) -> Result<models::SynthesizedAudio<f32>, Box<dyn Error>> {
+    ) -> Result<models::SynthesizedAudio<f32>, TtsError> {
         if let Some(model) = &self.default_model {
             return match model {
                 #[cfg(feature = "coqui")]
                 Model::Coqui => match &mut self.coqui_model {
                     Some(x) => x.synthesize(message, path),
-                    None => Err(Box::new(TtsError::NotLoaded)),
+                    None => Err(TtsError::NotLoaded),
                 },
                 #[cfg(feature = "parler")]
                 Model::Parler => match &mut self.parler_model {
                     Some(x) => x.synthesize(message, path),
-                    None => Err(Box::new(TtsError::NotLoaded)),
+                    None => Err(TtsError::NotLoaded),
                 },
                 #[cfg(feature = "tts-rs")]
                 Model::TTS => match &mut self.tts_model {
                     Some(x) => x.synthesize(message, path),
-                    None => Err(Box::new(TtsError::NotLoaded)),
+                    None => Err(TtsError::NotLoaded),
                 },
                 #[cfg(feature = "msedge")]
                 Model::MSEdge => match &mut self.msedge_model {
                     Some(x) => x.synthesize(message, path),
-                    None => Err(Box::new(TtsError::NotLoaded)),
+                    None => Err(TtsError::NotLoaded),
                 },
                 #[cfg(feature = "meta")]
                 Model::Meta => match &mut self.meta_model {
                     Some(x) => x.synthesize(message, path),
-                    None => Err(Box::new(TtsError::NotLoaded)),
+                    None => Err(TtsError::NotLoaded),
                 },
                 #[cfg(feature = "gtts")]
                 _ => match &mut self.gtts_model {
                     Some(x) => x.synthesize(message, path),
-                    None => Err(Box::new(TtsError::NotLoaded)),
+                    None => Err(TtsError::NotLoaded),
                 },
             };
         }
 
-        Err(Box::new(TtsError::NoDefaultModel))
+        Err(TtsError::NoDefaultModel)
     }
 
-    pub fn save(&mut self, message: String, path: &PathBuf) -> Result<(), Box<dyn Error>> {
+    pub fn save(&mut self, message: String, path: &PathBuf) -> Result<(), TtsError> {
         if let Some(model) = &self.default_model {
             return match model {
                 #[cfg(feature = "coqui")]
                 Model::Coqui => match &mut self.coqui_model {
                     Some(x) => x.save(message, path),
-                    None => Err(Box::new(TtsError::NotLoaded)),
+                    None => Err(TtsError::NotLoaded),
                 },
                 #[cfg(feature = "parler")]
                 Model::Parler => match &mut self.parler_model {
                     Some(x) => x.save(message, path),
-                    None => Err(Box::new(TtsError::NotLoaded)),
+                    None => Err(TtsError::NotLoaded),
                 },
                 #[cfg(feature = "tts-rs")]
                 Model::TTS => match &mut self.tts_model {
                     Some(x) => x.save(message, path),
-                    None => Err(Box::new(TtsError::NotLoaded)),
+                    None => Err(TtsError::NotLoaded),
                 },
                 #[cfg(feature = "msedge")]
                 Model::MSEdge => match &mut self.msedge_model {
                     Some(x) => x.save(message, path),
-                    None => Err(Box::new(TtsError::NotLoaded)),
+                    None => Err(TtsError::NotLoaded),
                 },
                 #[cfg(feature = "meta")]
                 Model::Meta => match &mut self.meta_model {
                     Some(x) => x.save(message, path),
-                    None => Err(Box::new(TtsError::NotLoaded)),
+                    None => Err(TtsError::NotLoaded),
                 },
                 #[cfg(feature = "gtts")]
                 _ => match &mut self.gtts_model {
                     Some(x) => x.save(message, path),
-                    None => Err(Box::new(TtsError::NotLoaded)),
+                    None => Err(TtsError::NotLoaded),
                 },
             };
         }
 
-        Err(Box::new(TtsError::NoDefaultModel))
+        Err(TtsError::NoDefaultModel)
     }
 
-    pub fn resume(&mut self) -> Result<(), Box<dyn Error>> {
+    pub fn resume(&mut self) -> Result<(), TtsError> {
         match &mut self.audio_handler {
             Some(AudioHandler::Sink { sink, stream: _ }) => sink.play(),
             #[cfg(feature = "tts-rs")]
-            Some(_) => return Err(Box::new(TtsError::NotSupported)),
-            _ => return Err(Box::new(TtsError::NotLoaded)),
+            Some(_) => return Err(TtsError::NotSupported),
+            _ => return Err(TtsError::NotLoaded),
         }
 
         Ok(())
     }
 
-    pub fn stop(&mut self) -> Result<(), Box<dyn Error>> {
+    pub fn stop(&mut self) -> Result<(), TtsError> {
         match &mut self.audio_handler {
             Some(AudioHandler::Sink { sink, stream: _ }) => sink.stop(),
             #[cfg(feature = "tts-rs")]
@@ -266,16 +266,16 @@ impl NaturalTts {
                 Some(x) => {
                     let _ = x.0.stop()?;
                 }
-                None => return Err(Box::new(TtsError::NotSupported)),
+                None => return Err(TtsError::NotSupported),
             },
-            _ => return Err(Box::new(TtsError::NotLoaded)),
+            _ => return Err(TtsError::NotLoaded),
         }
 
         Ok(())
     }
 }
 
-#[derive(Default, Clone)]
+#[derive(Clone)]
 pub enum Model {
     #[cfg(feature = "coqui")]
     Coqui,
@@ -293,26 +293,40 @@ pub enum Model {
     Meta,
 
     #[cfg(feature = "gtts")]
-    #[default]
     Gtts,
 }
 
-#[derive(Debug, TError, Clone)]
-pub enum TtsError {
-    #[error("Not Supported")]
-    NotSupported,
-    #[error("Operation failed")]
-    OperationFailed,
-    #[error("Model Not Loaded")]
-    NotLoaded,
-    #[error("Didn't Save")]
-    NotSaved,
-    #[error("Default model not set")]
-    NoDefaultModel,
-    #[error("Tensor Error")]
-    Tensor,
-    #[error("No Tokenizer Key")]
-    NoTokenizerKey,
-    #[error("Json Error")]
-    Json,
+impl Default for Model {
+    fn default() -> Self {
+        #[cfg(feature = "gtts")]
+        #[allow(unreachable_code)]
+        {
+            return Self::Gtts;
+        }
+        #[cfg(feature = "parler")]
+        #[allow(unreachable_code)]
+        {
+            return Self::Parler;
+        }
+        #[cfg(feature = "meta")]
+        #[allow(unreachable_code)]
+        {
+            return Self::Meta;
+        }
+        #[cfg(feature = "msedge")]
+        #[allow(unreachable_code)]
+        {
+            return Self::MSEdge;
+        }
+        #[cfg(feature = "tts-rs")]
+        #[allow(unreachable_code)]
+        {
+            return Self::TTS;
+        }
+        #[cfg(feature = "coqui")]
+        #[allow(unreachable_code)]
+        {
+            return Self::Coqui;
+        }
+    }
 }

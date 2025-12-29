@@ -26,7 +26,7 @@ impl GttsModel {
         }
     }
 
-    pub fn generate(&self, message: String, path: &PathBuf) -> Result<(), Box<dyn Error>> {
+    pub fn generate(&self, message: String, path: &PathBuf) -> Result<(), TtsError> {
         let len = message.len();
         if len > 100 {
             return Err(format!("The text is too long. Max length is {}", 100).into());
@@ -52,7 +52,7 @@ impl Default for GttsModel {
 
 impl NaturalModelTrait for GttsModel {
     type SynthesizeType = f32;
-    fn save(&mut self, message: String, path: &PathBuf) -> Result<(), Box<dyn Error>> {
+    fn save(&mut self, message: String, path: &PathBuf) -> Result<(), TtsError> {
         let _ = self.generate(message, path)?;
         did_save(path)
     }

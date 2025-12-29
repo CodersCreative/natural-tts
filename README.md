@@ -33,8 +33,8 @@ fn main() -> Result<(), Box<dyn Error>>{
         .tts_model(TtsModel::default())
         .build()?;
 
-    // Use the pre-included function to say a message using the default_model.
-    let _ = natural.say_auto("Hello, World!".to_string())?;
+    // Start producing an output using the default_model.
+    let _ = natural.start("Hello, World!".to_string(), &PathBuf::from("output.wav"));    
 
     // Get the rodio sink from natural tts
     let sink = natural.get_rodio_sink()?.0;
@@ -60,8 +60,8 @@ fn main() -> Result<(), Box<dyn Error>>{
         .default_model(Model::Meta)
         .build()?;
 
-    // Use the pre-included function to say a message using the default_model.
-    let _ = natural.say_auto("Hello, World!".to_string())?;
+    // Start producing an output using the default_model.
+    let _ = natural.start("Hello, World!".to_string(), &PathBuf::from("output.wav"));
 
     // Play the audio until it finishes
     natural.sleep_until_end();
@@ -83,8 +83,8 @@ fn main() -> Result<(), Box<dyn Error>>{
         .default_model(Model::Parler)
         .build()?;
 
-    // Use the pre-included function to say a message using the default_model.
-    let _ = natural.say_auto("Hello, World!".to_string())?;
+    // Start producing an output using the default_model.
+    let _ = natural.start("Hello, World!".to_string(), &PathBuf::from("output.wav"));
 
     // Play the audio until it finishes
     natural.sleep_until_end();
@@ -106,8 +106,8 @@ fn main() -> Result<(), Box<dyn Error>>{
         .default_model(Model::Gtts)
         .build()?;
 
-    // Use the pre-included function to say a message using the default_model.
-    let _ = natural.say_auto("Hello, World!".to_string())?;
+    // Start producing an output using the default_model.
+    let _ = natural.start("Hello, World!".to_string(), &PathBuf::from("output.wav"));
 
     // Play the audio until it finishes
     natural.sleep_until_end();
@@ -129,8 +129,8 @@ fn main() -> Result<(), Box<dyn Error>>{
         .default_model(Model::MSEdge)
         .build()?;
 
-    // Use the pre-included function to say a message using the default_model.
-    let _ = natural.say_auto("Hello, World!".to_string())?;
+    // Start producing an output using the default_model.
+    let _ = natural.start("Hello, World!".to_string(), &PathBuf::from("output.wav"));
 
     // Play the audio until it finishes
     natural.sleep_until_end();
@@ -153,8 +153,9 @@ fn main() -> Result<(), Box<dyn Error>>{
         .default_model(Model::TTS)
         .build()?;
 
-    // Use the pre-included function to say a message using the default_model.
-    let _ = natural.say_auto("Hello, World!".to_string())?;
+
+    // Start producing an output using the default_model.
+    let _ = natural.start("Hello, World!".to_string(), &PathBuf::from("output.wav"));
 
     // Play the audio until it finishes
     natural.sleep_until_end();
@@ -178,8 +179,8 @@ fn main() -> Result<(), Box<dyn Error>>{
         .default_model(Model::Coqui)
         .build().unwrap();
 
-    // Use the pre-included function to say a message using the default_model.
-    let _ = natural.say_auto("Hello, World!".to_string())?;
+    // Start producing an output using the default_model.
+    let _ = natural.start("Hello, World!".to_string(), &PathBuf::from("output.wav"));
 
     // Play the audio until it finishes
     natural.sleep_until_end();

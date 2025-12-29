@@ -17,18 +17,20 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
-use crate::models::{Spec::Wav, SynthesizedAudio};
+use crate::{
+    error::TtsError,
+    models::{Spec::Wav, SynthesizedAudio},
+};
 use hound::{Sample, WavReader};
 use rodio::{buffer::SamplesBuffer, OutputStream, Sink};
 use std::{
-    error::Error,
     io::{BufReader, Write},
     path::PathBuf,
 };
 
 pub fn read_wav_file<T: Sample + Send + rodio::cpal::Sample>(
     path: &PathBuf,
-) -> Result<SynthesizedAudio<T>, Box<dyn Error>> {
+) -> Result<SynthesizedAudio<T>, TtsError> {
     let mut reader = WavReader::open(path)?;
     let mut samples: Vec<T> = Vec::new();
 
@@ -53,7 +55,7 @@ pub fn get_path(path: String) -> String {
 }
 
 #[allow(dead_code)]
-pub fn play_audio<T>(data: Vec<T>, rate: u32) -> Result<(Sink, OutputStream), Box<dyn Error>>
+pub fn play_audio<T>(data: Vec<T>, rate: u32) -> Result<(Sink, OutputStream), TtsError>
 where
     T: Send + 'static,
     f32: From<T>,
@@ -71,7 +73,7 @@ where
     Ok((sink, stream_handle))
 }
 
-pub fn play_wav_file(path: &PathBuf) -> Result<(Sink, OutputStream), Box<dyn Error>> {
+pub fn play_wav_file(path: &PathBuf) -> Result<(Sink, OutputStream), TtsError> {
     let file = std::fs::File::open(path)?;
     let stream_handle = rodio::OutputStreamBuilder::open_default_stream()?;
     let mixer = stream_handle.mixer();

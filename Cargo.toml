@@ -1,6 +1,6 @@
 [package]
 name = "natural-tts"
-version = "0.3.0"
+version = "0.3.1"
 edition = "2021"
 license = "MIT"
 authors = ["Creative Coders <officialccoders@gmail.com>"]
@@ -12,7 +12,7 @@ keywords = ["text-to-speech", "coqui-ai", "gtts", "parler", "tts"]
 categories = ["science", "api-bindings"]
 
 [features]
-meta = ["dep:rand", "dep:tracing-chrome", "dep:tracing-subscriber", "dep:serde_json", "dep:hf-hub", "dep:candle-core", "dep:candle-nn", "dep:candle-transformers"]
+meta = ["dep:rand",  "dep:serde_json", "dep:hf-hub", "dep:candle-core", "dep:candle-nn", "dep:candle-transformers"]
 tts-rs = ["dep:tts"]
 coqui = ["dep:pyo3"]
 parler = ["dep:tokenizers", "meta"]
@@ -45,6 +45,4 @@ minreq = { version="2.14.1", features=["https"], optional = true }
 serde_json = {version = "1.0.148", optional = true}
 thiserror = {version = "2.0.17"}
 tokenizers = {version = "0.22.2", optional = true}
-tracing-chrome = {version = "0.7.2", optional = true}
-tracing-subscriber = {version = "0.3.22", optional = true}
 tts = {version = "0.26.3", optional = true}

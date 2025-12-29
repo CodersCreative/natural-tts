@@ -9,18 +9,18 @@ pub struct CoquiModel {
 
 impl Clone for CoquiModel {
     fn clone(&self) -> Self {
-        return Python::with_gil(|py| -> Self {
+        Python::attach(|py| -> Self {
             return Self {
                 model: self.model.clone_ref(py),
                 device: self.device.clone(),
             };
-        });
+        })
     }
 }
 
 impl CoquiModel {
-    pub fn new(model_name: String, use_gpu: bool) -> Result<Self, Box<dyn Error>> {
-        let m = Python::with_gil(|py| -> Result<Self, Box<dyn Error>> {
+    pub fn new(model_name: String, use_gpu: bool) -> Result<Self, TtsError> {
+        let m = Python::attach(|py| -> Result<Self, TtsError> {
             let torch = py.import("torch")?;
             let tts = py.import("TTS.api")?;
 
@@ -43,33 +43,33 @@ impl CoquiModel {
                 .call1((device.clone(), ("return_tensors", "pt")))?
                 .unbind();
 
-            return Ok(Self { model, device });
+            Ok(Self { model, device })
         });
 
-        return m;
+        m
     }
 
-    pub fn generate(&self, message: String, path: &PathBuf) -> Result<(), Box<dyn Error>> {
-        return Python::with_gil(|py| -> Result<(), Box<dyn Error>> {
+    pub fn generate(&self, message: String, path: &PathBuf) -> Result<(), TtsError> {
+        Python::attach(|py| -> Result<(), TtsError> {
             self.model.getattr(py, "tts_to_file")?.call1(
                 py,
                 (("text", message), ("file_path", path.to_str().unwrap())),
             )?;
             Ok(())
-        });
+        })
     }
 }
 
 impl Default for CoquiModel {
     fn default() -> Self {
-        return Self::new("tts_models/en/ljspeech/vits".to_string(), true).unwrap();
+        Self::new("tts_models/en/ljspeech/vits".to_string(), true).unwrap()
     }
 }
 
 impl NaturalModelTrait for CoquiModel {
     type SynthesizeType = f32;
 
-    fn save(&mut self, message: String, path: &PathBuf) -> Result<(), Box<dyn Error>> {
+    fn save(&mut self, message: String, path: &PathBuf) -> Result<(), TtsError> {
         let _ = self.generate(message, path)?;
         did_save(path)
     }

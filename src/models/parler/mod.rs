@@ -1,4 +1,6 @@
 pub mod model;
+use crate::error::TtsError;
+
 use super::{did_save, NaturalModelTrait, SynthesizedAudio};
 use candle_core::{DType, Device, IndexOp, Tensor};
 use candle_nn::VarBuilder;
@@ -6,7 +8,7 @@ use derive_builder::Builder;
 use hf_hub::api::sync::Api;
 use hound::WavSpec;
 use model::*;
-use std::{error::Error, path::PathBuf};
+use std::path::PathBuf;
 use tokenizers::Tokenizer;
 
 use super::meta::utils::*;
@@ -19,8 +21,6 @@ pub struct ParlerModelOptions {
     #[builder(default = "false")]
     pub cpu: bool,
     pub description: String,
-    #[builder(default = "false")]
-    pub tracing: bool,
     #[builder(default = "1.0")]
     pub temperature: f64,
     #[builder(default = "None")]
@@ -71,17 +71,7 @@ pub struct ParlerModel {
 }
 
 impl ParlerModel {
-    pub fn new(options: ParlerModelOptions) -> Result<Self, Box<dyn Error>> {
-        use tracing_chrome::ChromeLayerBuilder;
-        use tracing_subscriber::prelude::*;
-
-        let _guard = if options.tracing {
-            let (chrome_layer, guard) = ChromeLayerBuilder::new().build();
-            tracing_subscriber::registry().with(chrome_layer).init();
-            Some(guard)
-        } else {
-            None
-        };
+    pub fn new(options: ParlerModelOptions) -> Result<Self, TtsError> {
         let device = device(options.cpu)?;
 
         let (config, model_files, tokenizer) = match options.model_path {
@@ -115,7 +105,7 @@ impl ParlerModel {
 
         let tokenizer = Tokenizer::from_file(tokenizer).unwrap();
 
-        return Ok(Self {
+        Ok(Self {
             device,
             config,
             top_p: options.top_p,
@@ -124,10 +114,10 @@ impl ParlerModel {
             tokenizer,
             seed: options.seed,
             temperature: options.temperature,
-        });
+        })
     }
 
-    pub fn generate(&mut self, message: String) -> Result<SynthesizedAudio<f32>, Box<dyn Error>> {
+    pub fn generate(&mut self, message: String) -> Result<SynthesizedAudio<f32>, TtsError> {
         let description_tokens = self
             .tokenizer
             .encode(self.description.clone(), true)
@@ -164,7 +154,7 @@ impl ParlerModel {
         let pcm = normalize_loudness(&pcm, 24_000, true)?;
         let pcm = pcm.to_vec1::<f32>()?;
 
-        return Ok(SynthesizedAudio::new(
+        Ok(SynthesizedAudio::new(
             pcm,
             super::Spec::Wav(WavSpec {
                 sample_rate: self.config.audio_encoder.sampling_rate,
@@ -173,7 +163,7 @@ impl ParlerModel {
                 bits_per_sample: self.config.audio_encoder.model_bitrate as u16,
             }),
             None,
-        ));
+        ))
     }
 }
 
@@ -181,20 +171,28 @@ impl Default for ParlerModel {
     fn default() -> Self {
         let desc = "A female speaker in fast calming voice in a quiet environment".to_string();
         let model = "parler-tts/parler-tts-mini-expresso".to_string();
-        return Self::new(
+        Self::new(
             ParlerModelOptionsBuilder::default()
                 .model_path(ParlerModelPath::from(model))
                 .description(desc)
                 .build()
                 .unwrap(),
         )
-        .unwrap();
+        .unwrap()
     }
 }
 
 impl NaturalModelTrait for ParlerModel {
     type SynthesizeType = f32;
-    fn save(&mut self, message: String, path: &PathBuf) -> Result<(), Box<dyn Error>> {
+    fn synthesize(
+        &mut self,
+        message: String,
+        _path: &PathBuf,
+    ) -> Result<SynthesizedAudio<Self::SynthesizeType>, TtsError> {
+        self.generate(message)
+    }
+
+    fn save(&mut self, message: String, path: &PathBuf) -> Result<(), TtsError> {
         let data = self.synthesize(message, path)?;
         let mut output = std::fs::File::create(&path)?;
         write_pcm_as_wav(
